@@ -1,0 +1,18 @@
+# 1227 Personal Server
+
+# YEOLDUSIIESIPCHILLBOONYEOLDUSIIESIPCHILLB
+# OON   YEO     LDUSIIESI     PCH       ILL
+# BO    ON  YEO  LDU  SI  IES  IP  CHI  LLB
+# OONY  EOLDUS  IIESIPCHILLB  OONYEOL  DUSI
+# IESI  PCHI   LLBOO  NYEO   LDUSIIE  SIPCH
+# ILLB  OO       NYEOLDU       SIIES  IPCHI
+# LLBOONYEOLDUSIIESIPCHILLBOONYEOLDUSIIESIP
+
+#  /|-----|
+# | |[0_0]|     Hello
+# |\|+  ^.|/   World~!
+# |_|___O_|
+#   L  L 
+
+User-agent: *
+Disallow: /

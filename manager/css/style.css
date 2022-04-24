@@ -1,0 +1,9 @@
+@import url(//spoqa.github.io/spoqa-han-sans/css/SpoqaHanSansNeo.css);
+@import url('https://rsms.me/inter/inter.css');
+
+:root
+{
+    --bs-font-sans-serif: 'Inter', 'Spoqa Han Sans Neo', Roboto, "Helvetica Neue", Arial, 'Noto Sans CJK', "Segoe UI", normal Arial, Helvetica, 'sans-serif';
+    /* color-scheme: dark; */
+}
+
