@@ -52,3 +52,11 @@
 - php를 통한 미디어 스트림 (성능 문제)
 - 실시간 썸네일 생성 (성능 문제)
 - 댓글 남기기
+
+## 사용된 프로젝트들
+- 1227-opencloud-browser
+  - https://github.com/12si27/1227-opencloud-browser
+- Opencloud-Video-Player (+video.js)
+  - https://github.com/pdjdev/Opencloud-Video-Player
+- AdminKit
+  - https://github.com/adminkit/adminkit
