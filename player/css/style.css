@@ -52,7 +52,7 @@ body
 {
     background-color: rgb(24, 24, 24);
     border-radius: 5px;
-    cursor: pointer;
+    /* cursor: pointer; */
     transition: transform .2s;
     position: relative; 
 }
@@ -61,9 +61,33 @@ body
     transform: scale(1.01);
 }
 
+.switch-a {
+    text-decoration: none;
+}
+
 .card {
     background-color: rgb(41, 41, 41);
 }
 
+.subview {
+    color: gray;
+    border-color: gray;
+}
+
+.subview:hover {
+    background-color: white;
+    border-color: white;
+    color: black;
+}
+
 .vjs-control-bar { font-size: 130% }
 
+.vjs-tech:focus, #stream_video_html5_api:focus { outline: none; }
+
+.form-check-input {
+    background-color: #777777;
+}
+
+.form-check-input:checked {
+    background-color: #5aa1ef;
+}

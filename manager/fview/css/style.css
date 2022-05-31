@@ -1,0 +1,55 @@
+.item
+{
+    box-shadow: 0 0 0.5rem rgba(0,0,0,.15);
+    cursor: pointer;
+    transition: transform .2s;
+    position: relative;
+    border-radius: 6px;
+}
+
+.item:hover {
+    transform: scale(1.03);
+}
+
+#ellipWrap {
+    width: 100px;
+    background-color: #ccc;
+}
+.ell {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    word-wrap: break-word;
+    display: -webkit-box;
+    -webkit-line-clamp: 2; /* ellipsis line */
+    -webkit-box-orient: vertical;
+
+}
+
+.loader {
+    height: 30px;
+    width: 30px;
+    border: 6px solid #fff;
+    border-right-color: #9c9c9c;
+    border-top-color: #9c9c9c;
+    border-radius: 100%;
+    -webkit-animation: spin 800ms infinite linear;
+            animation: spin 800ms infinite linear;
+}
+
+@-webkit-keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(359deg);
+    }
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(359deg);
+    }
+}

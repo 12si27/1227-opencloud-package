@@ -12,10 +12,17 @@ function captionTagPrint($caption) {
     echo '<track kind="subtitles" label="Caption" src="../../player/subscan.php?c='.urlencode($caption).'" srclang="ko" default="">';
 }
 
-function urlValuesPrint($vidid, $sq, $page) {
-	?> <input hidden name="id" value="<?=$vidid?>">
-	<input hidden name="sq" value="<?=$sq?>">
-	<input hidden name="page" value="<?=$page?>"> <?php
+function urlValuesPrint() {
+	global $vidid, $sq, $page, $order, $viaexp;
+	?> <input hidden id="vidid" name="id" value="<?=$vidid?>">
+	<input hidden id="sq" name="sq" value="<?=$sq?>">
+	<input hidden id="page" name="page" value="<?=$page?>">
+	<input hidden id="order" name="order" value="<?=$order?>"> <?php
+	if ($viaexp) { ?> <input hidden id="viaexp" name="viaexp" value="1"> <?php }
+}
+
+function urlenc_wos($url) {
+	return str_replace('%2F','/',rawurlencode($url));
 }
 
 $user_id = $_SESSION['userid'];
@@ -33,19 +40,16 @@ $startloc = '../'.$startloc;
 
 # 현재 페이지 (사이드바 메뉴 출력용)
 $curr_page = 'videdit';
+
+# 페이지 타이틀
+$page_title = '비디오 수정';
 ?>
 
 <!DOCTYPE html>
 <html>
 <head>
-	<meta charset="utf-8">
-	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-
-	<title>12:27 백업클라우드 관리 Page</title>
-
-	<link href="../css/app.css" rel="stylesheet">
-	<link href="../css/style.css" rel="stylesheet">
+	<!-- 헤더 -->
+	<?php require('../src/header.php')?>
 
 	<style>
 		.card-body h4 {
@@ -89,8 +93,11 @@ if (!$is_empty) {
 	$vidid = $vid['id'];
 
 	$vid_name = substr($floc, strrpos($floc, '/')+1);
+	$vid_ext = substr($vid_name, strrpos($vid_name, '.')+1);
+
 	$vid_name = substr($vid_name, 0, strrpos($vid_name, '.'));
 	$vid_dir = $startloc.substr($floc, 0, strrpos($floc, '/'));
+
 
 	$thumblink = $vid_dir.'/.THUMB/'.$vid_name.'.jpg';
 	$subloc = $vid_dir.'/.SUB/'.$vid_name;
@@ -103,6 +110,9 @@ if (!$is_empty) {
 	# 영상이 존재하는지 체크 (존재 안해도 DB 있으면 계속하기)
 	if (!file_exists($startloc.$floc)) {
 		$fail = 18; # 없으면 에러코드 부여
+	} else {
+		# 스트림 URL 지정
+		$stream_url = './video_prev_stream.php?video='.urlencode($floc).'&t='.filemtime($startloc.$floc);
 	}
 
 	#vtt(srt) 자막이 존재하는지 체크
@@ -117,6 +127,17 @@ if (!$is_empty) {
 		$captype = 'srt';
 		$caption = str_replace($startloc, '', $subloc).'.srt';
 	}
+
+
+	# 잠금 영상인지 체크
+    $query = mysqli_query($conn, "SELECT id, active, vid_key, allowed_user FROM locked WHERE id = '$vidid'");
+
+    # 잠금 비디오일 경우
+    if (mysqli_num_rows($query) > 0) {
+		$query = mysqli_fetch_array($query);
+		$pass_key = $query['vid_key'];
+		$pass_key_active = $query['active'];
+    }
 
 }
 ?>
@@ -174,6 +195,12 @@ if (!$is_empty) {
 										echo "업로드 파일 저장에 실패하였습니다. (해당 디렉토리 권한을 확인하세요)";
 									} elseif ($fail == 18) {
 										echo "영상을 찾을 수 없습니다. 영상 파일이 지워지지 않았나요?";
+									} elseif ($fail == 19) {
+										echo "영상 업로드는 성공하였으나 자막 또는 썸네일이 정상적으로 적용되지 않았습니다. 수동으로 적용해 주시기 바랍니다.";
+									} elseif ($fail == 20) {
+										echo "설정할 키 값을 입력해 주십시오.";
+									} elseif ($fail == 21) {
+										echo "영상 잠금 설정에 실패하였습니다. (키 값이 너무 길 수도 있습니다)";
 									}
 									?>
 								</div>
@@ -240,7 +267,7 @@ if (!$is_empty) {
                             <div class="card">
                                 <form class="card-body" method="POST" action="./vid_name_change.php">
                                     <h3 class="card-title mb-3">파일명</h3>
-									<?=urlValuesPrint($vidid, $_GET['sq'], $_GET['page'])?>
+									<?=urlValuesPrint()?>
                                     <input type="text" name="name" class="form-control" placeholder="Input" value="<?=$vid_name?>" required>
                                     <div class="d-flex flex-row-reverse mt-2">
                                         <button type="submit" class="btn btn-secondary">저장</button>
@@ -258,8 +285,8 @@ if (!$is_empty) {
 									</div>
                                     
                                     <div class="container ratio ratio-16x9" style="padding-left: 0; padding-right: 0;">
-                                        <video id="my_video_html5_api" controls oncontextmenu="return false;" controlsList="nodownload">
-                                            <source src="<?=$startloc.$floc?>" type='video/mp4' />
+                                        <video id="my_video" controls>
+                                            <source src="<?=$stream_url?>" type='video/mp4' />
                                             <?php if ($caption != '') { captionTagPrint($caption); } ?>
                                         </video>
                                     </div>
@@ -268,8 +295,30 @@ if (!$is_empty) {
 
                             <div class="card">
                                 <div class="card-body">
-                                    <h3 class="card-title mb-3">디렉토리</h3>
-                                    <input type="text" class="form-control" placeholder="Input" value="<?=str_replace($startloc, '', $vid_dir)?>" disabled>
+                                    <h3 class="card-title mb-3">비디오</h3>
+									<div id="error"></div>
+									<div class="input-group">
+										<?php if ($fail != 18) { ?>
+										<a class="btn btn-outline-secondary" type="button" href="<?=urlenc_wos($startloc.$floc)?>" download="">다운로드</a>
+										<?php } ?>
+										<input type="text" class="form-control" placeholder="(비디오 없음)" value="<?=$floc?>" disabled>
+									</div>
+                                    <div class="input-group mt-2">
+										<?=urlValuesPrint()?>
+                                        <input type="file" class="form-control" id="vid_file" name="vid_file" accept=".<?=$vid_ext?>" required>
+
+										<div class="d-flex justify-content-between">
+											<button class="btn btn-outline-secondary" type="submit" id="uploadBt" onclick="uploadFile()">바꾸기</button>
+										</div>
+									</div>
+									<div hidden id="upload-status">
+										<div class="d-flex justify-content-end mt-2">
+											<div>
+												<progress class="progress-bar" role="progressbar" id="progressBar" value="0" max="100"></progress>
+												<div id="status" class="fs-6 text-end"></div>
+											</div>
+										</div>										
+									</div>
                                 </div>
                             </div>
                         </div>
@@ -280,17 +329,17 @@ if (!$is_empty) {
                                     <h3 class="card-title mb-3">자막 (캡션)</h3>
 									<div class="input-group">
 										<?php if ($caption != '') { ?>
-										<a class="btn btn-outline-secondary" type="button" href="<?=$startloc.$caption?>" download="">다운로드</a>
+										<a class="btn btn-outline-secondary" type="button" href="<?=urlenc_wos($startloc.$caption)?>" download="">다운로드</a>
 										<?php } ?>
 										<input type="text" class="form-control" placeholder="(자막 없음)" value="<?=$caption?>" disabled>
 										<form action="./caption_reset.php" method="POST">
-											<?=urlValuesPrint($vidid, $_GET['sq'], $_GET['page'])?>
+											<?=urlValuesPrint()?>
 											<button class="btn btn-danger" type="input" id="inputCapFile" <?=($caption==''?'disabled':'')?>>초기화 (제거)</button>
 										</form>
 									</div>
                                     <form enctype="multipart/form-data" class="input-group mt-2" action="./caption_upload.php" method="POST">
-										<?=urlValuesPrint($vidid, $_GET['sq'], $_GET['page'])?>
-                                        <input type="file" class="form-control" id="inputCapFile" name="cap_file" required>
+										<?=urlValuesPrint()?>
+                                        <input type="file" class="form-control" id="inputCapFile" name="cap_file" accept=".vtt,.srt" required>
 
 										<div class="d-flex justify-content-between">
 											<button class="btn btn-outline-secondary" type="submit" id="inputCapFile">적용</button>
@@ -301,31 +350,74 @@ if (!$is_empty) {
 
                             <div class="card">
                                 <div class="card-body">
-                                    <h3 class="card-title mb-3">썸네일 미리보기</h3>
-									<img class="container ratio ratio-16x9" style="padding-left: 0; padding-right: 0;" src="<?=$thumblink?>">
-                                </div>
-                            </div>
-
-                            <div class="card">
-                                <div class="card-body">
                                     <h3 class="card-title mb-3">썸네일 (대표사진)</h3>
 									<div class="input-group">
-										<?php if ($caption != '') { ?>
+										<?php if ($thumblink != $def_thumb) { ?>
 										<a class="btn btn-outline-secondary" type="button" href="<?=$thumblink?>" download="">다운로드</a>
 										<?php } ?>
 										<input type="text" class="form-control" placeholder="(썸네일 없음)" value="<?=($thumblink==$def_thumb?'':str_replace($startloc, '', $thumblink))?>" disabled>
 										<form action="./thumb_reset.php" method="POST">
-											<?=urlValuesPrint($vidid, $_GET['sq'], $_GET['page'])?>
+											<?=urlValuesPrint()?>
 											<button class="btn btn-danger" type="input" id="inputThumbFile" <?=($thumblink==$def_thumb?' disabled':'')?>>초기화 (제거)</button>
 										</form>
 									</div>
                                     <form enctype="multipart/form-data" class="input-group mt-2" action="./thumb_upload.php" method="POST">
-										<?=urlValuesPrint($vidid, $_GET['sq'], $_GET['page'])?>
-                                        <input type="file" class="form-control" id="inputThumbFile" name="thumb_file" required>
+										<?=urlValuesPrint()?>
+                                        <input type="file" class="form-control" id="inputThumbFile" name="thumb_file"  accept=".jpg,.jpeg" required>
 										<div class="d-flex justify-content-between">
 											<button class="btn btn-outline-secondary" type="submit" id="inputThumbFile">적용</button>
 										</div>
 									</form>
+                                </div>
+                            </div>
+
+							<div class="card">
+                                <div class="card-body">
+                                    <h3 class="card-title mb-3">썸네일 미리보기</h3>
+									<img class="container ratio ratio-16x9" style="padding-left: 0; padding-right: 0;" src="<?=urlenc_wos($thumblink)?>">
+                                </div>
+                            </div>
+
+							<div class="card">
+                                <div class="card-body">
+									<div class="d-flex justify-content-between">
+										<h3 class="card-title mb-2">디렉토리</h3>
+										<a class="btn btn-sm btn-primary mb-2" href="../fview?d=<?=urlenc_wos(str_replace($startloc, '', $vid_dir))?>">
+											<i class="align-middle me-1" data-feather="folder"></i>탐색기로 이동
+										</a>
+									</div>
+                                    <input type="text" class="form-control" placeholder="Input" value="<?=str_replace($startloc, '', $vid_dir)?>" disabled>
+                                </div>
+                            </div>
+
+							<div class="card">
+                                <form class="card-body" method="POST" action="./vid_lock_set.php">
+                                    <h3 class="card-title mb-3">비디오 잠금 설정</h3>
+									<?=urlValuesPrint()?>
+									<div class="form-check me-3">
+										<input class="form-check-input" onchange="vidLockChkChange();" type="checkbox" name="pass_key_active" value="1" id="pass_key_active" <?=($pass_key_active=='1'?'checked':'')?>>
+										<label class="form-check-label" for="pass_key_active">비디오 잠금 활성화</label>
+									</div>
+                                    <div class="input-group mt-2">
+                                        <input type="text" placeholder="여기에 키 값 입력" class="form-control" id="pass_key"
+										name="pass_key" value="<?=htmlentities($pass_key)?>" required <?=($pass_key_active=='1'?'':'disabled')?>>
+										<button class="btn btn-outline-secondary" type="submit" id="uploadBt">적용</button>
+									</div>
+								</form>
+                            </div>
+
+							<div class="card">
+                                <div class="card-body">
+                                    <h3 class="card-title mb-3">비디오 · DB 삭제</h3>
+
+									<div class="d-flex justify-content-end">
+										<button class="btn btn-outline-danger ms-2" type="button" id="delVidBt" onclick="deleteVideo(true);">비디오 파일 삭제</button>									
+										<form action="./db_reset.php" method="POST">
+											<?=urlValuesPrint()?>
+											<button class="btn btn-outline-danger ms-2" type="submit" id="delDBBt">DB 데이터 삭제</button>
+										</form>
+										<button class="btn btn-danger ms-2" type="button" id="delAllBT" onclick="deleteVideo(false);">전체 삭제</button>
+									</div>
                                 </div>
                             </div>
 
@@ -348,8 +440,6 @@ if (!$is_empty) {
 						</div>
 					</div>
 						
-						
-						
 					<?php } ?>
 
                 </div>
@@ -361,6 +451,16 @@ if (!$is_empty) {
 	</div>
 
 	<script src="../js/app.js"></script>
+	<script src="./js/script.js"></script>
+	<script>
+		function vidLockChkChange() {
+			if (document.getElementById('pass_key_active').checked) {
+				document.getElementById('pass_key').disabled = false;
+			} else {
+				document.getElementById('pass_key').disabled = true;
+			}
+		}
+	</script>
 </body>
 
 </html>

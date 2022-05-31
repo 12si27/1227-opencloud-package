@@ -17,12 +17,6 @@ require('../src/dbconn.php');
 $totalspace = disk_total_space("/var/www/html/1227cloud/Home");
 $freespace = disk_free_space("/var/www/html/1227cloud/Home");
 
-$sql = "SELECT id, views, file_loc, last_checked FROM videos";
-$sql .= " ORDER BY last_checked DESC";
-$sql .=" LIMIT 10";
-
-$query = mysqli_query($conn, $sql);
-
 # 현재 페이지 (사이드바 메뉴 출력용)
 $curr_page = 'index';
 ?>
@@ -30,14 +24,8 @@ $curr_page = 'index';
 <!DOCTYPE html>
 <html>
 <head>
-	<meta charset="utf-8">
-	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-
-	<title>12:27 백업클라우드 관리 Page</title>
-
-	<link href="css/app.css" rel="stylesheet">
-	<link href="css/style.css" rel="stylesheet">
+	<!-- 헤더 -->
+	<?php require('./src/header.php')?>
 </head>
 
 <body>
@@ -54,43 +42,6 @@ $curr_page = 'index';
 				<div class="container-fluid p-0">
 
 					<h1 class="h3 mb-3"><strong>스트리밍</strong> 요약</h1>
-
-					<div class="row">
-						<div class="col">
-							<div class="card flex-fill">
-								<div class="card-header">
-									<h5 class="card-title mb-0">최근 조회 영상</h5>
-								</div>
-								<div class="table-responsive">
-									<table class="table table-hover my-0">
-										<thead>
-											<tr>
-												<th scope="col">VIDID</th>
-												<th scope="col">Location</th>
-												<th scope="col">Views</th>
-												<th scope="col">Last Checked</th>
-											</tr>
-										</thead>
-											<tbody>
-												<?php 
-												while($data = mysqli_fetch_array($query)) {
-													?>
-													<tr>
-														<th scope="row"><?=$data['id']?></th>
-														<td><?=$data['file_loc']?></td>
-														<td><?=$data['views']?></td>
-														<td><?=$data['last_checked']?></td>
-													</tr>
-													<?php
-												}
-												?>
-											</tbody>
-									</table>
-								</div>
-							</div>
-						</div>
-					</div>
-
 
 					<div class="row">
 						<div class="col-sm-6">
@@ -121,6 +72,97 @@ $curr_page = 'index';
 						</div>
 					</div>
 
+					<div class="row">
+						<div class="col-sm-6">
+							<div class="card flex-fill w-100">
+								<div class="card-header">
+									<h5 class="card-title mb-0">최근 24시간 조회수</h5>
+								</div>
+								<div class="card-body d-flex w-100">
+									<div class="align-self-center chart chart-lg">
+										<canvas id="chart-3"></canvas>
+									</div>
+								</div>
+							</div>
+						</div>
+						
+					</div>
+
+					<div class="row">
+						<div class="col-sm-6">
+							<div class="card flex-fill">
+								<div class="card-header pb-0">
+									<h5 class="card-title mb-0">최근 조회 영상</h5>
+								</div>
+								<div class="table-responsive d-flex w-100">
+									<table class="table table-sm table-hover m-2">
+										<thead>
+											<tr>
+												<th scope="col">VIDID</th>
+												<th scope="col">Location</th>
+												<th scope="col">Views</th>
+												<th scope="col">Last Checked</th>
+											</tr>
+										</thead>
+											<tbody>
+												<?php
+												$sql = "SELECT id, views, file_loc, last_checked FROM videos";
+												$sql .= " ORDER BY last_checked DESC";
+												$sql .=" LIMIT 10";
+												
+												$query = mysqli_query($conn, $sql);
+
+												while($data = mysqli_fetch_array($query)) {
+													?>
+													<tr onclick="location.href='https://cloud.1227.kr/manager/videdit/?id=<?=$data['id']?>';">
+														<th scope="row"><?=$data['id']?></th>
+														<td><?=$data['file_loc']?></td>
+														<td><?=$data['views']?></td>
+														<td><?=$data['last_checked']?></td>
+													</tr>
+													<?php
+												}
+												?>
+											</tbody>
+									</table>
+								</div>
+							</div>
+						</div>
+						<div class="col-sm-6">
+							<div class="card flex-fill w-100">
+								<div class="card-header pb-0">
+									<h5 class="card-title">최근 7일 최다 시청</h5>
+								</div>
+								<div class="table-responsive d-flex w-100">
+									<table class="table table-sm table-hover m-2" style="overflow: hidden;">
+										<thead>
+											<tr>
+												<th scope="col">VIDID</th>
+												<th scope="col">Location</th>
+												<th scope="col">Views</th>
+											</tr>
+										</thead>
+											<tbody>
+												<?php 
+												$sql = "SELECT id, sum, file_loc FROM ( SELECT id, SUM(views) AS sum FROM `hourly_view` WHERE DATE BETWEEN DATE_ADD(NOW(), INTERVAL -1 WEEK) AND NOW() GROUP BY id ORDER BY sum DESC LIMIT 15 ) a NATURAL JOIN ( SELECT file_loc, id FROM videos ) b";
+
+												$query = mysqli_query($conn, $sql);
+												while($data = mysqli_fetch_array($query)) {
+													?>
+													<tr onclick="location.href='https://cloud.1227.kr/manager/videdit/?id=<?=$data['id']?>';">
+														<th scope="row"><?=$data['id']?></th>
+														<td><?=$data['sum']?></td>
+														<td><?=$data['file_loc']?></td>
+													</tr>
+													<?php
+												}
+												?>
+											</tbody>
+									</table>
+								</div>
+							</div>
+						</div>
+					</div>
 
 
 					<h1 class="h3 mb-3"><strong>스토리지</strong> 요약</h1>
@@ -136,7 +178,7 @@ $curr_page = 'index';
 									<div class="align-self-center w-100">
 										<div class="py-3">
 											<div class="chart chart-xs"><div class="chartjs-size-monitor"><div class="chartjs-size-monitor-expand"><div class=""></div></div><div class="chartjs-size-monitor-shrink"><div class=""></div></div></div>
-												<canvas id="chart-3" width="376" height="250" style="display: block; height: 200px; width: 301px;" class="chartjs-render-monitor"></canvas>
+												<canvas id="chart-capacity" width="376" height="250" style="display: block; height: 200px; width: 301px;" class="chartjs-render-monitor"></canvas>
 											</div>
 										</div>
 
@@ -252,9 +294,103 @@ $curr_page = 'index';
 			});
 		});
 
+
+		// 최근 24시간 시청수
+
+		<?php
+		$sql = 'SELECT date, hour, sum(views) as sum FROM `hourly_view` GROUP BY date, hour ORDER BY date DESC, hour DESC LIMIT 24';
+
+		/* 출력예시:
+		date		hour	sum(views)
+		2022-05-30	17		32
+		2022-05-30	16		4
+		2022-05-30	15		9
+		2022-05-30	11		2
+		2022-05-30	10		1
+		*/
+
+		$q = mysqli_query($conn, $sql);
+		$day_date = array();
+		$day_hour = array();
+		$day_sum = array();
+
+		$day_curr_date = '';
+		$day_curr_hour = -1;
+
+		while ($data = mysqli_fetch_array($q)) {
+
+			# 맨 처음 접근이 아닐때
+			if ($day_curr_hour != -1) {
+
+				# 현재 불러온 시간값에 1 더한거 불러오기
+				$day_tmp_hour = $data['hour'] + 1;
+
+				# 만약 1을 더했는데도 이전 시작보다 작은 경우
+				# -> 차이가 -1보다 더 크기때문에 빈 0값을 계속 어레이에 추가 (빈 공간 메꾸기)
+				while ($day_tmp_hour < $day_curr_hour) {
+					$day_curr_hour -= 1;
+
+					array_push($day_date, $day_curr_date);
+					array_push($day_hour, $day_curr_hour);
+					array_push($day_sum, 0);
+
+				}
+			}
+
+			$day_curr_hour = $data['hour'];
+			$day_curr_date = $data['date'];
+
+			array_push($day_date, $day_curr_date);
+			array_push($day_hour, $day_curr_hour);
+			array_push($day_sum, $data['sum']);
+
+			if (count($day_date) > 24) {
+				break;
+			}
+		}
+
+		$day_label = array();
+		$day_data = array();
+		for ($i=count($day_date)-1; $i>=0; $i--) {
+			$newdate = substr($day_date[$i], strpos($day_date[$i], '-')+1).' '.$day_hour[$i];
+			array_push($day_label, $newdate);
+			array_push($day_data, $day_sum[$i]);
+		}
+
+		?>
+
+		document.addEventListener("DOMContentLoaded", function() {
+			// Bar chart
+			new Chart(document.getElementById("chart-3"), {
+				type: "bar",
+				data: {
+					labels: ["<?=join('","',$day_label)?>"],
+					datasets: [{
+						label: "시청수",
+						backgroundColor: window.theme.primary,
+						borderColor: window.theme.primary,
+						hoverBackgroundColor: window.theme.primary,
+						hoverBorderColor: window.theme.primary,
+						data: [<?=join(',',$day_data)?>],
+						barPercentage: .75,
+						categoryPercentage: .5
+					}]
+				},
+				options: {
+					maintainAspectRatio: false,
+					legend: {
+						display: false
+					},
+				}
+			});
+		});
+
+
+		// 여유 공간
+
 		document.addEventListener("DOMContentLoaded", function() {
 			// Pie chart
-			new Chart(document.getElementById("chart-3"), {
+			new Chart(document.getElementById("chart-capacity"), {
 				type: "pie",
 				data: {
 					labels: ["사용 중", "여유 공간"],

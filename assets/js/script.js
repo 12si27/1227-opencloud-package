@@ -169,6 +169,7 @@ $(function(){
 
 					rendered = searchByPath(hash[0]);
 
+					/*
 					if (rendered.length) {
 
 						currentPath = hash[0];
@@ -180,7 +181,14 @@ $(function(){
 						currentPath = hash[0];
 						breadcrumbsUrls = generateBreadcrumbs(hash[0]);
 						render(rendered);
-					}
+					}*/
+
+					currentPath = hash[0];
+					breadcrumbsUrls = generateBreadcrumbs(hash[0]);
+					fileList.fadeOut(200 ,function() {
+						render(rendered);
+					})
+					
 
 				}
 
@@ -355,8 +363,10 @@ $(function(){
 						icon = '<span class="icon file f-'+fileType+'" id="video-'+count+'">.'+fileType+'</span>';
 
 						// 백그라운드에서 썸네일 확인
-						checkThumbnail(thumb, 'video-' + count);
-						
+						// 다만 (지금은) 클넢, 평범쇼에서만 한정적으로 작동하도록 설정
+						if (floc.indexOf('/CloseEnough/') != -1 || floc.indexOf('/RegularShow/') != -1) {
+							checkThumbnail(thumb, 'video-' + count);
+						}
 					} else {
 						icon = '<span class="icon file f-'+fileType+'">.'+fileType+'</span>';
 					} 
@@ -373,8 +383,11 @@ $(function(){
 					} else if (fileType == "pdf") {
 						var file = $('<li class="files"><a data-fancybox data-type="iframe" data-src="'+ f.path+'" title="'+ f.path +'" href="javascript:;" class="files">'+icon+'<span class="name">'+ name +'</span> <span class="details">'+fileSize+'</span></a></li>');
 					} else if (fileType == "mp4") {
-						var newdir = "/player?video="+encodeURIComponent(f.path.substring(f.path.indexOf('/')+1));
+						var newdir = "./player?video="+encodeURIComponent(f.path.substring(f.path.indexOf('/')+1));
 						name = name.substring(name.indexOf('-')+1, name.indexOf('.mp4')).trim();
+						var file = $('<li class="files"><a href="'+ newdir +'" target="_blank" title="'+ f.path +'" class="files">'+icon+'<span class="name">'+ name +'</span> <span class="details">'+fileSize+'</span></a></li>');
+					} else if (fileType == "srt" || fileType == "vtt" || fileType == "smi") {
+						var newdir = "./subview?c="+encodeURIComponent(f.path.substring(f.path.indexOf('/')+1));
 						var file = $('<li class="files"><a href="'+ newdir +'" target="_blank" title="'+ f.path +'" class="files">'+icon+'<span class="name">'+ name +'</span> <span class="details">'+fileSize+'</span></a></li>');
 					} else if (fileType == "m4a") {
 						var file = $('<li class="files"><a data-fancybox="audio" data-type="iframe" data-src="'+ f.path+'" title="'+ f.path +'" class="files" style>'+icon+'<span class="name">'+ name +'</span> <span class="details">'+fileSize+'</span></a></li>');
@@ -397,12 +410,13 @@ $(function(){
 			if(filemanager.hasClass('searching')){
 
 				url = '<span>: </span>';
-				fileList.removeClass('animated');
+				// 일단 줌 애니메이션은 임시적으로 비활성화
+				// fileList.removeClass('animated');
 
 			}
 			else {
 
-				fileList.addClass('animated');
+				// fileList.addClass('animated');
 
 
 				breadcrumbsUrls.forEach(function (u, i) {
@@ -420,16 +434,6 @@ $(function(){
 
 				});
 
-				/////맞춤 배경 기능/////
-
-				if (url.indexOf('SpecialFolder') != -1) {
-					document.body.style.backgroundImage = "url('images/SpecialFolder.jpg')";
-					document.body.style.backgroundAttachment = "fixed";
-				} else {
-					document.body.style.backgroundImage = "url('images/background.png')";
-					document.body.style.backgroundAttachment = "scroll";
-				}
-
 			}
 
 			if (breadcrumbsUrls.length == 1) {
@@ -440,14 +444,28 @@ $(function(){
 				document.title = breadcrumbsUrls[breadcrumbsUrls.length-1].replace('Home/','') + ' - 1227 백업 오픈클라우드';
 			}
 			
-			// Show the generated elements
-			fileList.fadeIn(); 
+			// 로딩 스크린 지우기
+			$('#loading').fadeOut('fast', function() {
+
+				// 처음 실행이면 (animated) 있으면
+				if (fileList.hasClass('animated')) {
+					// 첫 등장이후 확대애니메이션 끄기
+					fileList.fadeIn(700, function () {
+						fileList.removeClass('animated');
+					});
+				} else {
+					// Show the generated elements
+					fileList.fadeIn();
+				}
+			});
+
+			
 
 		}
 
 		function checkThumbnail(img, id) {
 			$.ajax({
-				url: img,
+				url: encodeURIComponent(img),
 				type:'HEAD',
 				error: function()
 				{
@@ -484,6 +502,8 @@ $(function(){
 			var i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)));
 			return Math.round(bytes / Math.pow(1024, i), 2) + ' ' + sizes[i];
 		}
-
 	});
 });
+
+
+

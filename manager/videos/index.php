@@ -18,50 +18,17 @@ $startloc = '../'.$startloc;
 
 # 현재 페이지 (사이드바 메뉴 출력용)
 $curr_page = 'videos';
+
+# 페이지 타이틀
+$page_title = '비디오 목록';
 ?>
 
 <!DOCTYPE html>
 <html>
 <head>
-	<meta charset="utf-8">
-	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-
-	<title>12:27 백업클라우드 관리 Page</title>
-
-	<link href="../css/app.css" rel="stylesheet">
-	<link href="../css/style.css" rel="stylesheet">
-
-	<style>
-
-		.vid-card
-		{
-			box-shadow: 0 0 0.5rem rgba(0,0,0,.15);
-			cursor: pointer;
-			transition: transform .2s;
-			position: relative; 
-		}
-
-		.vid-card:hover {
-			transform: scale(1.01);
-		}
-
-		#ellipWrap {
-				width: 100px;
-				background-color: #ccc;
-		}
-		.ell {
-			overflow: hidden;
-			text-overflow: ellipsis;
-			word-wrap: break-word;
-			display: -webkit-box;
-			-webkit-line-clamp: 2; /* ellipsis line */
-			-webkit-box-orient: vertical;
-
-		}
-
-	</style>
-
+	<!-- 헤더 -->
+	<?php require('../src/header.php')?>
+	<link href="./css/style.css" rel="stylesheet">
 
 </head>
 
@@ -163,7 +130,7 @@ while($vid = mysqli_fetch_array($query)) {
 				<div class="container-fluid p-0">
 
 					<div class="d-flex justify-content-between">
-						<h1 class="h3 mb-3">비디오 목록 <small class="text-secondary">총 <?=$totalcount?>개</small></h1>
+						<span class="fs-3 mb-3"><b>비디오 목록</b> <small class="text-secondary">총 <?=$totalcount?>개</small></span>
 						<form class="col-6" name="searchForm" style="max-width: 400px;" method="GET">
 							<div class="input-group pb-3">
 								<select class="form-select" style="max-width: 130px;" name="order" onchange="javascript:document.searchForm.submit();">
@@ -178,6 +145,66 @@ while($vid = mysqli_fetch_array($query)) {
 							</div>
 						</form>
 					</div>
+
+					<?php # 삭제 작업후 알림, 에러 출력
+
+					$delok = $_GET['delok'];
+
+					if ($delok != null) {
+
+						$title = '';
+						$cmt = '';
+
+						if ($delok > 0) {
+							# 체크 아이콘 (성공)
+							$color = '64b899';
+							$icon = '<path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/>';
+						} else {
+							# 느낌표 아이콘 (오류)
+							$color = 'f14254';
+							$icon = '<path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>';
+						}
+
+						switch ($delok) {
+							case 1:
+								$title = '비디오 DB 삭제 완료';
+								$cmt = '다시 생성을 원할 경우 탐색기에서 비디오를 열거나 플레이어로 영상을 재생해 주세요.';
+								break;
+							case 2:
+								$title = '비디오 전체 삭제 완료';
+								$cmt = '해당 비디오 파일과 DB가 모두 삭제되었습니다.';
+								break;
+							case -1:
+								$title = '시간별 조회수 DB 삭제 실패';
+								$cmt = '해당 테이블이 없거나 DB에 문제가 있을 수 있습니다. DB 확인 후 다시 시도해 주세요.';
+								break;
+							case -2:
+								$title = '비디오 DB 삭제 실패';
+								$cmt = '비디오 테이블이 없거나 DB에 문제가 있을 수 있습니다. DB 확인 후 다시 시도해 주세요.';
+								break;
+							case -3:
+								$title = '존재하지 않는 비디오 ID';
+								$cmt = 'DB에서 해당 비디오 ID를 찾을 수 없었습니다. 이미 삭제되었을 수도 있습니다.';
+								break;
+						}
+
+						if ($title != '' AND $cmt != '') {
+							?>
+							<div class="alert text-light d-flex justify-content-between p-3 my-3 rounded-3" role="alert" style="background-color: #<?=$color?>;">
+								<span class="d-flex">					
+									<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-exclamation-triangle-fill flex-shrink-0 me-2" viewBox="0 0 16 16" role="img" aria-label="Warning:">
+										<?=$icon?>
+									</svg>
+									<div><b><?=$title?></b></br><?=$cmt?></div>
+								</span>
+								<button type="button" class="btn-close btn-close-white align-middle" data-bs-dismiss="alert" aria-label="Close"></button>
+							</div>
+							<?php
+						}
+					}
+
+					?>
+
 					
 
 					<div class="row row-cols-1 row-cols-xl-2 row-cols-xxl-3 g-4 pb-4" style="overflow: auto; overflow-y: hidden;">
@@ -188,6 +215,9 @@ while($vid = mysqli_fetch_array($query)) {
 						$vid_name = substr($vid_loc[$i], strrpos($vid_loc[$i], '/')+1);
 						$vid_name = substr($vid_name, 0, strrpos($vid_name, '.'));
 						$thumblink = $startloc.substr($vid_loc[$i], 0, strrpos($vid_loc[$i], '/')).'/.THUMB/'.$vid_name.'.jpg';
+
+						# 동년일 경우 년수는 지움 처리
+						$vid_ctime_cut = (strpos($vid_ctime[$i], date('Y').'-') === 0 ? substr($vid_ctime[$i], 5) : $vid_ctime[$i]);
 
 						if (!file_exists($thumblink)) {
 							$thumblink = './no_thumb.png';
@@ -200,12 +230,12 @@ while($vid = mysqli_fetch_array($query)) {
 								 style="min-width: 350px; max-height: 113px;<?=($_GET['pid']==$vid_id[$i]?' background-color: #fcf4bf;':'')?>">
 								<div class="d-flex">
 									<div class="ratio ratio-16x9" style="width: 200px; min-width: 200px; height: 113px;">
-										<img src="<?=$thumblink?>" class="rounded-start">
+										<img src="<?=rawurlencode($thumblink)?>" class="rounded-start">
 									</div>
 									<div class="d-flex align-items-center mx-3">
 										<div class="d-flex flex-column">
 											<div class="card-title mb-0 ell" style="max-height: 50px;"><?=$vid_name?></div>
-											<div class="card-text" style="font-size: small;">조회수 <?=$vid_views[$i]?></br>최근 열람 <?=$vid_ctime[$i]?></div>
+											<div class="card-text" style="font-size: small;">조회수 <?=$vid_views[$i]?> · 최근 열람 <?=$vid_ctime_cut?></div>
 										</div>
 									</div>
 								</div>
@@ -225,6 +255,7 @@ while($vid = mysqli_fetch_array($query)) {
 					<div class="btn-group">
 						<a class="btn btn-secondary" href="?page=1<?php
 						if ($_GET['squery']!='') { echo "&squery=".$_GET['squery']; }
+						if ($_GET['order']!='') { echo "&order=".$_GET['order']; }
 						?>" aria-label="First">
 							<span aria-hidden="true">&laquo;</span>
 							<span class="sr-only">처음</span>
@@ -242,6 +273,7 @@ while($vid = mysqli_fetch_array($query)) {
 										if (($i + 1) == $pg) { echo " active"; }
 										echo "\" href=\"?page=".($i + 1);
 										if ($_GET['squery']!='') { echo "&squery=".$_GET['squery']; }
+										if ($_GET['order']!='') { echo "&order=".$_GET['order']; }
 										echo "\">";
 										echo ($i + 1);
 										echo "</a>";
@@ -256,6 +288,7 @@ while($vid = mysqli_fetch_array($query)) {
 										if (($pg + $i - 2) == $pg) { echo " active"; }
 										echo "\" href=\"?page=".($pg + $i - 2);
 										if ($_GET['squery']!='') { echo "&squery=".$_GET['squery']; }
+										if ($_GET['order']!='') { echo "&order=".$_GET['order']; }
 										echo "\">";
 										echo ($pg + $i - 2);
 										echo "</a>";

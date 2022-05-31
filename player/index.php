@@ -1,377 +1,16 @@
 <?php
-setlocale(LC_ALL, 'ko_KR.UTF-8');
+/*
+    index.php
+    1227 CloudPlayer INDEX PAGE
 
-$urlchk = true;
+    Written by 1227
+    rev. 20220529 (0.21.2)
+*/
 
-require('../src/settings.php');
-$video = $_GET['video'];
+# 리비전 -> 이거 없으면 실행 안됨 (index.php를 통해 실행했는지 체크여부도 겸함)
+$rev = '0.21.3';
 
-
-# 요청 유효성 검사
-
-if ($video == '') {
-    $urlchk = false;
-} elseif ($video == '.') {
-    $urlchk = false;
-} elseif ($video == '..') {
-    $urlchk = false;
-} else {
-    $chk = strpos($video, '../');
-    if ($chk !== false and $chk == 0) {
-        $urlchk = false;
-    }
-
-    $chk = strpos($video, '/../');
-    if ($chk !== false) {
-        $urlchk = false;
-    }
-
-    # 쓸데없는 2개 이상 슬래쉬는 허용 X
-    $chk = strpos($video, '//');
-    if ($chk !== false) {
-        $urlchk = false;
-    }  
-
-    # *.mp4 컨테이너만 허용 (추후 webm 사용시 변경 필요)
-    if (!endsWith($video, '.mp4')) {
-        $urlchk = false;
-    }   
-
-    
-}
-if ($urlchk) {
-    $urlchk = file_exists($startloc.$video);
-}
-if (!$urlchk) {
-    echo "<script>alert('잘못된 주소 또는 삭제 처리된 영상입니다.');history.back();</script>";
-    exit();
-}
-
-
-$nplayer = $_GET['np'];                 # 네이티브 플레이어 여부 (GET)
-$nplayer_c = $_COOKIE['np'];            # 네이티브 플레이어 여부 (COOKIE)
-
-if ($nplayer == null) { # get nplayer 값 없을때
-    if ($nplayer_c == null) { # 쿠키값도 없을때
-        $nplayer = 0; setcookie('np', 0, time()+3600*24*365, '/');
-    } else { $nplayer = $nplayer_c; }
-} else { setcookie('np', $nplayer, time()+3600*24*365, '/'); }
-
-
-
-$no_punct = $_GET['no_punct'];                 # 문장부호 삭제 여부 (GET)
-$no_punct_c = $_COOKIE['no_punct'];            # 문장부호 삭제 여부 (COOKIE)
-
-if ($no_punct == null) { # get no_pucnt 값 없을때
-    if ($no_punct_c == null) { # 쿠키값도 없을때
-        # 기본값 (false) 으로 채우기
-        $no_punct = 0; setcookie('no_punct', 0, time()+3600*24*365, '/');
-    } else {
-        # 쿠키 있음
-
-        # apply 하는 상황일 경우
-        if ($_GET['apply']) {
-            # no_punct 강제 적용 (false도 적용해야 하니까)
-            setcookie('no_punct', $no_punct, time()+3600*24*365, '/');
-        } else {
-            # 아니면 쿠키값 불러오기
-            $no_punct = $no_punct_c; 
-        }   
-        
-    }
-} else { setcookie('no_punct', $no_punct, time()+3600*24*365, '/'); }
-
-
-
-# 문자열 접미사 (파일 확장자) 판단
-function endsWith($string, $endString)
-{
-    $len = mb_strlen($endString, 'utf-8');
-    if ($len == 0) {
-        return true;
-    }
-    return (mb_substr($string, -$len, NULL, 'utf-8') === $endString);
-}
-
-# 자막 이름 지정
-function captionTagPrint($filename, $caption, $no_punct, $caplang) {
-    echo '<track kind="subtitles" label="';
-    if ($caplang == 'N/A') {
-        echo '자막 표시';
-    } else {
-        echo $caplang;
-    }
-    echo '" src="./subscan.php?c='.urlencode($caption).'&np='.$no_punct.'" srclang="ko" default="">';
-}
-
-# 영상, 자막관련 알림패널 표시
-function showAlert($title, $content) {
-?>
-    <div class="alert alert-dismissible fade show" role="alert">
-        <div class="d-flex">
-            <div>
-                <i class="fa-solid fa-circle-info me-2" style="font-size: x-large;"></i>
-            </div>
-            <div>
-                <strong><?=$title?></strong></br>
-                <span style='font-size: small;'><?=$content?></span>
-            </div>
-        </div>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-    <style>
-        .alert { background-color: #3f3f3f; color: white; }
-    </style>
-    <?php
-}
-
-# 포스트 검색 URL 생성
-function searchUrlGen($title) {
-    return "https://duckduckgo.com/?q=!ducky+site:blog.naver.com+%2212si27%22".urlencode($title); #<-덕덕고 검색 (잘안됨)
-    #return "https://search.naver.com/search.naver?query=site%3Ablog.naver.com%2F12si27+".urlencode($title);
-}
-
-# 조회수 카운트 여부 판별 (쿠키 이용)
-function isCountable($vidid) {
-    $pv_c = $_COOKIE['prev_vid'];       # 이전 비디오 ID (COOKIE)
-    
-    if ($pv_c == null) { # 이전 비디오값이 없을때
-        setcookie('prev_vid', $vidid, time()+600, '/'); # 10분동안 쿠키 유지
-        return 1; # 처음 본 것이므로 1 추가
-    } else {
-        if ($pv_c == $vidid) { # 이전 비디오 아이디와 현재아이디와 같을때
-            return 0;
-        } else {
-            setcookie('prev_vid', $vidid, time()+600, '/'); # 10분동안 쿠키 유지
-            return 1;
-        }
-    }
-}
-
-
-# 비디오ID 체크 및 등록
-
-require('../src/dbconn.php');
-$floc = mysqli_real_escape_string($conn, $video);
-$query = mysqli_query($conn, "SELECT id, views, last_checked FROM videos WHERE file_loc = '".$floc."'");
-
-$views = 0;
-$last_chk = 'N/A';
-
-
-# 비디오 위치값 정리
-
-$video = $startloc.$video;
-$path_parts = pathinfo($video);
-$currdir = mb_substr($path_parts['dirname'],  mb_strlen($startloc, 'utf-8'), NULL, 'utf-8');
-
-
-################################ 비디오 정보 등록 ################################
-
-# 비디오가 등록되어 있지 않은 경우
-if (mysqli_num_rows($query) < 1) {
-    
-    while(1) {
-
-        # id생성
-        $chars = "abcdefghijklmnopqrstuvwxyz0123456789";
-        $var_size = strlen($chars);
-        $vidid = '';
-        for( $x = 0; $x < 6; $x++ ) { 
-            $vidid .= $chars[ rand( 0, $var_size - 1 ) ]; 
-        }
-
-        # 중복체크
-        $id_check = mysqli_query($conn, "SELECT id FROM videos WHERE id = '$vidid'");
-        if (mysqli_num_rows($id_check) < 1) {
-            break;
-        }
-    }
-
-    $sql = "INSERT INTO `videos` (`file_loc`, `id`, `views`) VALUES ('$floc', '$vidid', '1')";
-    $result = mysqli_query($conn,$sql);
-    $views = 1;
-
-# 등록되어 있는 경우
-} else {
-    $query = mysqli_fetch_array($query);
-    $vidid = $query['id'];
-    $last_chk = $query['last_checked'];
-    $add = isCountable($vidid);
-    $views = $query['views'] + $add;
-    $sql = "UPDATE videos SET views = IFNULL(views, 0) + $add, last_checked = NOW() WHERE id = '$vidid'";
-    mysqli_query($conn,$sql);
-}
-
-################################ 비디오 시간당 조회수 등록 ################################
-
-$query = mysqli_query($conn, "SELECT views FROM hourly_view WHERE id = '".$vidid."' AND date = CURDATE() AND hour = HOUR(NOW())");
-
-# 조회수가 등록되어 있지 않은 경우
-if (mysqli_num_rows($query) < 1) {
-    
-    $sql = "INSERT INTO `hourly_view` (`id`, `date`, `hour`, `views`) VALUES ('$vidid', CURDATE(), HOUR(NOW()), '1')";
-    $result = mysqli_query($conn, $sql);
-
-# 등록되어 있는 경우
-} else {
-    $query = mysqli_fetch_array($query);
-    $hourly_views = $query['views'] + $add;
-    $sql = "UPDATE hourly_view SET views = IFNULL(views, 0) + $add WHERE id = '".$vidid."' AND date = CURDATE() AND hour = HOUR(NOW())";
-    mysqli_query($conn, $sql);
-}
-
-################################################################################################
-
-
-
-######################################## 내장 자막 분석 ########################################
-
-#vtt(srt) 자막이 존재하는지 체크
-$caption = '';
-$captype = 'N/A';
-$caplang = 'N/A';
-if (file_exists($path_parts['dirname'].'/.SUB/'.$path_parts['filename'].'.vtt')) {
-    $captype = 'Web Video Text Tracks';
-    $caption = str_replace($startloc, '', $path_parts['dirname']).'/.SUB/'.$path_parts['filename'].'.vtt';
-} elseif (file_exists($path_parts['dirname'].'/.SUB/'.$path_parts['filename'].'.srt')) {
-    $captype = 'SubRip Subtitle';
-    $caption = str_replace($startloc, '', $path_parts['dirname']).'/.SUB/'.$path_parts['filename'].'.srt';
-}
-
-
-# 영자막일 경우 (제목에 [EN]이 있는 경우)
-if (strpos($path_parts['filename'], '[EN]') !== false) {
-    $caplang = "English";
-} elseif (strpos($path_parts['filename'], '[KR]') !== false or strpos($path_parts['filename'], '[자막]') !== false or strpos($path_parts['filename'], '[FX]') !== false) {
-    $caplang = "한국어";
-}
-
-###############################################################################################
-
-
-######################################## 파일 목록 분석 ########################################
-
-$isitfirst = false;
-$isitlast = false;
-
-$files = array_values(array_filter(scandir($path_parts['dirname']), function($item) {
-    return endsWith($item, '.mp4');
-}));
-
-
-if (count($files) == 1) {
-    $isitfirst = true;
-    $isitlast = true;
-} else {
-    $order = array_search($path_parts['basename'], $files);
-    if ($order == 0) {
-        $isitfirst = true;
-    } elseif ($order == count($files)-1) {
-        $isitlast = true;
-    }
-}
-
-###############################################################################################
-
-
-####################################### 스마트 추천 분석 #######################################
-
-$smart_next = '';
-$smart_prev = '';
-$smart_next_fname = '';
-$smart_prev_fname = '';
-
-# Case 1. 시즌 마지막 에피소드를 보았고 다음 시즌 첫화를 봐야할 때
-if ($isitlast OR $isitfirst) { # 시즌 첫화 또는 막화일시 (폴더의 첫, 마지막 영상) 일시
-
-    # 현재폴더명 추출 (예: S1)
-    $currfolder = substr($path_parts['dirname'], strrpos($path_parts['dirname'], '/') + 1);
-
-    # 현재섭폴더 추출 (예: ../Home/RegularShow/)
-    $currsubdir = substr($path_parts['dirname'], 0, strrpos($path_parts['dirname'], '/') + 1);
-
-    # 현재섭폴더가 시작폴더가 아닐 경우에만 (시작폴더일 경우 의미없음)
-    if ($currsubdir != $startloc) {
-
-        # 비디오 주소생성 위한 시작폴더 주소제거
-        $currsubdir_v = str_replace($startloc, '', $currsubdir);
-        $subdirlist = scandir($currsubdir);
-        $subdir_order = -1;
-
-        foreach ($subdirlist as $dirs) {
-            $subdir_order++;
-            if ($dirs == $currfolder) {
-                break;
-            }
-        }
-
-
-        if ($isitfirst AND $subdir_order > 2) {
-            $smart_prev = $subdirlist[$subdir_order-1];
-        } 
-        
-        if ($isitlast AND $subdir_order < count($subdirlist)) {
-            $smart_next = $subdirlist[$subdir_order+1];
-        }
-
-        # 이전것이 디렉토리가 맞다면
-        if ($smart_prev != '' AND is_dir($currsubdir.$smart_prev)) {
-            $subdirlist = scandir($currsubdir.$smart_prev);
-
-            # 맨 끝에놈을 찾아야 하니 break 없음
-            foreach ($subdirlist as $file) {
-                if (endsWith($file, '.mp4')) {
-                    $smart_prev_fname = $file;
-                }
-            }
-        }
-
-        # 다음것이 디렉토리가 맞다면
-        if ($smart_next != '' AND is_dir($currsubdir.$smart_next)) {
-            $subdirlist = scandir($currsubdir.$smart_next);
-
-            foreach ($subdirlist as $file) {
-                if (endsWith($file, '.mp4')) {
-                    $smart_next_fname = $file;
-                    break;
-                }
-            }
-        }
-    }
-}
-
-
-###############################################################################################
-
-
-###################################### 썸네일(포스터) 분석 ######################################
-
-# 현재 영상 썸네일
-$thumb = $path_parts['dirname'].'/.THUMB/'.$path_parts['filename'].'.jpg';
-if (!file_exists($thumb)) {
-    $thumb = '';
-}
-
-# 이전 영상 썸네일
-$prev_thumb = '';
-if (!$isitfirst) { # 첫번째 영상이 아닐 시에만
-    $prev_thumb = $path_parts['dirname'].'/.THUMB/'.substr($files[$order-1], 0, strrpos($files[$order-1], '.')).'.jpg';    
-} elseif ($smart_prev_fname != '') { # 추천 이전 영상 존재시에도
-    $prev_thumb = $currsubdir.$smart_prev.'/.THUMB/'.substr($smart_prev_fname, 0, strrpos($smart_prev_fname, '.')).'.jpg';   
-}
-
-
-# 다음 영상 썸네일
-$next_thumb = '';
-if (!$isitlast) { # 마지막 영상이 아닐 때에만
-    $next_thumb = $path_parts['dirname'].'/.THUMB/'.substr($files[$order+1], 0, strrpos($files[$order+1], '.')).'.jpg';   
-} elseif ($smart_next_fname != '') { # 추천 이전 영상 존재시에도
-    $next_thumb = $currsubdir.$smart_next.'/.THUMB/'.substr($smart_next_fname, 0, strrpos($smart_next_fname, '.')).'.jpg';   
-}
-
-
-################################################################################################
+require('./src/preload.php');
 
 ?>
 <!doctype html>
@@ -384,29 +23,29 @@ if (!$isitlast) { # 마지막 영상이 아닐 때에만
         <meta name="theme-color" content="#1c2c3b">
         <link rel="icon" sizes="192x192" href="../img.png">
 
-        <!-- Bootstrap CSS -->
+        <!-- CSS -->
         <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
-        <link href="./css/style.css?rev=0.27" rel="stylesheet">
+        <link href="./css/style.css?rev=<?=$rev?>" rel="stylesheet">
         <script src="https://kit.fontawesome.com/b435844d6f.js" crossorigin="anonymous"></script>
-
-        <link href="https://cdn.jsdelivr.net/npm/videojs-mobile-ui/dist/videojs-mobile-ui.css" rel="stylesheet">
-
+        
         <!-- Global site tag (gtag.js) - Google Analytics -->
         <script async src="https://www.googletagmanager.com/gtag/js?id=G-RGCW2QEFK9"></script>
         <script>
             window.dataLayer = window.dataLayer || [];
             function gtag(){dataLayer.push(arguments);}
             gtag('js', new Date());
-
             gtag('config', 'G-RGCW2QEFK9');
         </script>
 
-        <?php
-            if ($nplayer == false) {
-                ?> <link href="https://vjs.zencdn.net/7.18.1/video-js.css" rel="stylesheet" />
-                <link href="./css/theme.css?rev=0.13" rel="stylesheet"> <?php
-            }
-        ?>
+        <!-- 자막 스타일 CSS 출력 (srt만) -->
+        <?php require('./src/substyling.php') ?>
+
+        <!-- video.js CSS load -->
+        <?php if ($nplayer == false) { ?>
+        <link href="https://vjs.zencdn.net/7.18.1/video-js.css" rel="stylesheet" />
+        <link href="./css/theme.css?rev=<?=$rev?>" rel="stylesheet">
+        <link href="https://cdn.jsdelivr.net/npm/videojs-mobile-ui/dist/videojs-mobile-ui.css" rel="stylesheet">
+        <?php } ?>
         
         <title><?=$path_parts['filename']?> - 1227 클라우드플레이어</title>
     </head>
@@ -414,60 +53,80 @@ if (!$isitlast) { # 마지막 영상이 아닐 때에만
         
         <nav class="navbar navbar-dark">
             <div class="container">
-                <a class="navbar-brand mb-0 fw-bolder" href="../" style="color: rgb(150,150,150);">
+                <a class="navbar-brand mb-0 ps-1 fw-bolder" href="../" style="color: rgb(150,150,150);">
                     12:<span style="color: #5aa1ef;">27</span> CloudPlayer
                 </a>
                 <div class="d-flex">
+                <?php if ($direct) { ?>
+                    <a class="btn btn-outline-light" href="../#Home%2F<?=urlencode($currdir)?>"><i class="fa-solid fa-grip"></i> 목록으로</a>
+                <?php } else { ?>
                     <a class="btn btn-outline-light" onclick="window.close();"><i class="fa-solid fa-door-open"></i> 나가기</a>
+                <?php } ?>
                 </div>
             </div>
         </nav>
 
         <!-- 플레이어 -->
         <div class="bg-black">
-            
-            <?php
-            if ($nplayer == false) { ?>
-            <div class="container" style="padding-left: 0; padding-right: 0;">
-                <video id="my_video"
-                       class="video-js vjs-theme-1227 vjs-big-play-centered"
-                       width="160px" height="90px" controls controlsList="nodownload"
-                       <?php if($thumb != "") {echo 'poster="'.$thumb.'"';}?>
-                       preload="true" data-setup='{ "aspectRatio":"16:9"}'
-                       oncontextmenu="return false;" autoplay>
-                    <source src="<?=$video?>" type='video/mp4' />
-                    <?php if ($caption != '') { captionTagPrint($path_parts['filename'], $caption, $no_punct, $caplang); } ?>
-                </video>
-                <!--<script src="https://vjs.zencdn.net/7.18.1/video.min.js"></script>-->
-                <script src="./js/video.min.js?rev=1.7"></script>
-                <script src="./js/video.fullscreen.js"></script>
-                <script src="./js/video.mobileui.js?rev=1"></script>
-            </div> <?php
-            } else { ?>
-            <div class="container ratio ratio-16x9" style="padding-left: 0; padding-right: 0;">
-                <video id="my_video_html5_api" autoplay controls oncontextmenu="return false;" controlsList="nodownload">
-                    <source src="<?=$video?>" type='video/mp4' />
-                    <?php if ($caption != '') { captionTagPrint($path_parts['filename'], $caption, $no_punct, $caplang); } ?>
-                </video>
-            </div>
-            <?php }
-            ?>
-            
+            <?php require('./src/player.php') ?>
         </div>
+
+        <?php
+        // 제목 처리
+
+        $title = $path_parts['filename'];
+        # 대쉬가 있을 경우
+        if (mb_strpos($title, '-', 'utf-8') !== false) {
+            $series = trim(substr($title, 0, strpos($title, '-')));
+            $name = trim(substr($title, strpos($title, '-') + 1));
+
+            # 분류태그 ([]) 도 (짝이 맞게) 있을 경우
+            if (mb_strpos($title, '[', 'utf-8') !== false) {
+                if (mb_substr_count($title, '[', 'utf-8') == mb_substr_count($title, ']', 'utf-8')) {
+                    # 제목에서 태그 떼기
+                    $name = trim(substr($name, 0, strpos($name, '[')));
+
+                    $tag = trim(substr($title, strpos($title, '[')));
+                    $tag = str_replace('[', '<span class="badge bg-secondary" style="position:relative; bottom: 1.5pt;">', $tag);
+                    $tag = str_replace(']', '</span>', $tag);
+
+                }
+            }
+        }
+
+        ?>
 
         <!-- 메인 컨트롤 -->
         <div class="main-control shadow-sm">
             <div class="container py-1">
                 <div class="d-flex flex-wrap">
                     <div class="p-2 fw-bolder title">
-                        <span class="fs-5">
+                        <?php
+                        // 제목 출력
+                        if ($series != NULL and $name != NULL) {
+                            ?>
+                            <div style="font-size: 10pt; font-weight: 500;"><?=$series.' '.$tag?></div>
+                            <div style="font-size: 14pt; word-break: break-all;"><?=$name?></div>
                             <?php
-                            $title = $path_parts['filename'];
+                        } else {
+                            ?> <span class="fs-5"> <?php
                             $title = str_replace('[', '<span class="badge bg-secondary">', $title);
                             $title = str_replace(']', '</span>', $title);
                             echo $title;
-                            ?>
-                        </span>
+                            ?> </span> <?php
+                        }
+
+                        // 잠금 아이콘 표시 (잠금 비디오일때)
+                        echo '<span style="opacity: 0.5;">';
+                        if ($lock_video) {
+                            if ($key_passed) {
+                                echo '<i class="fa-solid fa-lock-open"></i>';
+                            } else {
+                                echo '<i class="fa-solid fa-lock"></i>';
+                            }
+                        }
+                        echo '</span>';
+                        ?>
                     </div>
 
                     <div class="p-2 flex-fill d-flex justify-content-end align-items-center">
@@ -476,12 +135,12 @@ if (!$isitlast) { # 마지막 영상이 아닐 때에만
                         data-bs-toggle="tooltip" data-bs-placement="bottom" title="이 영상을 열람한 횟수">
                         <i class="fa-solid fa-eye"></i> <span class="bt-text"><?=number_format($views)?></span></span>
 
-                        <a class="btn btn-sm btn-dark ms-2" href="?video=<?=urlencode($_GET['video'])?>&np=<?=($nplayer?0:1)?>"
-                        data-bs-toggle="tooltip" data-bs-html="true" data-bs-placement="bottom" title="<?php
+                        <a class="btn btn-sm btn-dark ms-2" href="?video=<?=urlencode($_GET['video'])?>&np=<?=($nplayer?0:1)?><?=($direct?'&direct=1':'')?>&r=1"
+                        data-bs-toggle="tooltip" onclick="window.stop();" data-bs-html="true" data-bs-placement="bottom" title="<?php
                             if ($nplayer) {
                                 echo '1227 백업클라우드에서 제공하는 자체 플레이어로 재생합니다.</br><sub>대부분의 환경에서 추천합니다.</sub>';
                             } else {
-                                echo '브라우저에 내장된 플레이어로 재생합니다.</br><sub>레거시/스트림 환경에서 추천합니다.</sub>';
+                                echo '브라우저에 내장된 플레이어로 재생합니다.</br><sub>iOS/레거시 환경에서 추천합니다.</sub>';
                             }
                             ?>"><?php
                             if ($nplayer) {
@@ -500,7 +159,7 @@ if (!$isitlast) { # 마지막 영상이 아닐 때에만
                         href="<?=searchUrlGen($path_parts['filename'])?>"
                         target="_blank"
                         data-bs-toggle="tooltip" data-bs-html="true" data-bs-placement="bottom"
-                        title="duckduckgo 엔진을 통해 1227.kr 블로그 영상을 검색하여 접속합니다.</br><sub>주의: 원본 글이 없거나 검색이 되지 않는 경우 부적절한 글이 나올 수 있습니다.</sub>">
+                        title="실시간 검색을 통해 해당 영상의 1227.kr 포스트로 접속합니다.">
                         <img src="./naverblog.svg" width=18px height=18px></img> <span class="bt-text">포스트 검색</span></a>
                     </div>
                 </div>
@@ -509,44 +168,52 @@ if (!$isitlast) { # 마지막 영상이 아닐 때에만
         
         <div class="container mt-3">
 
+            <?php
+            if(!$isitfirst) {
+                $prev_link = '?video='.urlencode($currdir.'/'.$files[$order-1]).($direct?'&direct=1':'').'&r=1';
+            } elseif ($smart_prev_fname != '') {
+                $prev_link = '?video='.urlencode($currsubdir_v.$smart_prev.'/'.$smart_prev_fname).($direct?'&direct=1':'').'&r=1';
+            }
+
+            if(!$isitlast) {
+                $next_link = '?video='.urlencode($currdir.'/'.$files[$order+1]).($direct?'&direct=1':'').'&r=1';
+            } elseif ($smart_next_fname != '') {
+                $next_link = '?video='.urlencode($currsubdir_v.$smart_next.'/'.$smart_next_fname).($direct?'&direct=1':'').'&r=1';
+            }
+            ?>
+
             <!-- 비디오 탐색 버튼 -->
             <div class="row">
-                <div class="col-sm-6">
-                    <div class="shadow px-3 py-2 mb-2 switch-bt prev-bt"<?php
-                        if(!$isitfirst) {
-                            ?> onclick="location.href='./?video=<?=urlencode($currdir.'/'.$files[$order-1])?>';" <?php
-                        } elseif ($smart_prev_fname != '') {
-                            ?> onclick="location.href='./?video=<?=urlencode($currsubdir_v.$smart_prev.'/'.$smart_prev_fname)?>';" <?php
-                        }?>>
-                        <div class="fw-bold switch-title">이전 비디오<?=($smart_prev_fname!=''?' <small><i>스마트 추천</i></small>':'')?></div>
-                        <div class="text-wrap switch-content"><?php
-                        if ($smart_prev_fname != '') {    
-                            echo substr($smart_prev_fname, 0, strrpos($smart_prev_fname, '.'));
-                        } elseif ($isitfirst) {
-                            echo "<span style='color: rgb(40,40,40);'>첫번째 비디오입니다</span>";
-                        } else {
-                            echo substr($files[$order-1], 0, strrpos($files[$order-1], '.'));
-                        }
-                        ?></div>
+                <div class="col-md-6">
+                    <div class="shadow px-3 py-2 mb-2 switch-bt prev-bt">
+                        <?php if ($prev_link != NULL) { ?> <a class="switch-a" onclick="window.stop();" href="<?=$prev_link?>"> <?php } ?>
+                            <div class="fw-bold switch-title">이전 비디오<?=($smart_prev_fname!=''?' <small><i>스마트 추천</i></small>':'')?></div>
+                            <div class="text-wrap switch-content"><?php
+                            if ($smart_prev_fname != '') {    
+                                echo substr($smart_prev_fname, 0, strrpos($smart_prev_fname, '.'));
+                            } elseif ($isitfirst) {
+                                echo "<span style='color: rgb(40,40,40);'>첫번째 비디오입니다</span>";
+                            } else {
+                                echo substr($files[$order-1], 0, strrpos($files[$order-1], '.'));
+                            }
+                            ?></div>
+                        <?php if ($prev_link != NULL) { ?> </a> <?php } ?>
                     </div>
                 </div>
-                <div class="col-sm-6">
-                    <div class="shadow px-3 py-2 mb-2 switch-bt next-bt"<?php
-                        if(!$isitlast) {
-                            ?> onclick="location.href='./?video=<?=urlencode($currdir.'/'.$files[$order+1])?>';" <?php
-                        } elseif ($smart_next_fname != '') {
-                            ?> onclick="location.href='./?video=<?=urlencode($currsubdir_v.$smart_next.'/'.$smart_next_fname)?>';" <?php
-                        }?>>
-                        <div class="fw-bold switch-title">다음 비디오<?=($smart_next_fname!=''?' <small><i>스마트 추천</i></small>':'')?></div>
-                        <div class="text-wrap switch-content"><?php
-                        if ($smart_next_fname != '') {    
-                            echo substr($smart_next_fname, 0, strrpos($smart_next_fname, '.'));
-                        } elseif ($isitlast) {
-                            echo "<span style='color: rgb(40,40,40);'>마지막 비디오입니다</span>";
-                        } else {
-                            echo substr($files[$order+1], 0, strrpos($files[$order+1], '.'));
-                        }
-                        ?></div>
+                <div class="col-md-6">
+                    <div class="shadow px-3 py-2 mb-2 switch-bt next-bt">
+                        <?php if ($next_link != NULL) { ?> <a class="switch-a" onclick="window.stop();" href="<?=$next_link?>"> <?php } ?>
+                            <div class="fw-bold switch-title">다음 비디오<?=($smart_next_fname!=''?' <small><i>스마트 추천</i></small>':'')?></div>
+                            <div class="text-wrap switch-content"><?php
+                            if ($smart_next_fname != '') {    
+                                echo substr($smart_next_fname, 0, strrpos($smart_next_fname, '.'));
+                            } elseif ($isitlast) {
+                                echo "<span style='color: rgb(40,40,40);'>마지막 비디오입니다</span>";
+                            } else {
+                                echo substr($files[$order+1], 0, strrpos($files[$order+1], '.'));
+                            }
+                            ?></div>
+                        <?php if ($next_link != NULL) { ?> </a> <?php } ?>
                     </div>
                 </div>
             </div>
@@ -554,7 +221,7 @@ if (!$isitlast) { # 마지막 영상이 아닐 때에만
             <!-- 비디오 관련 토스트 -->
             <?php
             if (strpos($path_parts['filename'], '[HD+]') !== false) {
-                showAlert('HD+ 화질', '트래픽 부담을 줄이기 위해 약간 낮은 화질(900p)로 제공됩니다. 추후 원본 화질로 대체될 예정입니다.');
+                showAlert('HD+ 화질', '트래픽 부담을 줄이기 위해 약간 낮은 화질(900p)로 제공됩니다.<br><span style="font-size: x-small; opacity: 0.3;">원본 화질 시청을 원하실 경우 \'포스트 검색\'을 눌러 포스트 영상을 보시기 바랍니다.</span>');
             } elseif (strpos($path_parts['filename'], '[LQ]') !== false) {
                 showAlert('저화질 영상','아직 고화질 영상이 존재하지 않는 비디오(480p 이하)입니다. 양해 부탁 드립니다.');
             }
@@ -564,26 +231,40 @@ if (!$isitlast) { # 마지막 영상이 아닐 때에만
             }
             ?>
 
+            <?php // 아래 자막 옵션, 비디오, 자막 정보는 키 검증을 통과하여야 출력됨
+            if ($key_passed) { ?>
+
             <!-- 내장 자막 옵션 -->
-            <?php
-            if ($caption != '') {
-            ?>
+            <?php if ($caption != '') { ?>
 
             <div class="card mt-2">
                 <div class="card-body">
                 <h6 class="card-subtitle mb-2 text-muted">내장 자막 설정</h6>
-                    <form class="d-flex justify-content-between align-items-center" method="GET">
-                        <div class="form-check form-switch" style="color: #afafaf;">
-                            <input class="form-check-input" type="checkbox" name="no_punct" value="1" id="flexSwitchCheckDefault" <?=($no_punct=='1'?'checked':'')?>>
-                            <label class="form-check-label" for="flexSwitchCheckDefault">문장 부호 ( '.' , '~' , '!' 등) 숨기기</label>
+                    <form class="d-flex flex-wrap align-items-center" method="GET" onsubmit="window.stop();">
+                        <div class="form-check form-switch me-3" style="color: #afafaf;">
+                            <input class="form-check-input" type="checkbox" name="no_punct" value="1" id="no_punct" <?=($no_punct=='1'?'checked':'')?>>
+                            <label class="form-check-label" for="no_punct">문장 부호 ( '.' , '~' , '!' 등) 최소화</label>
+                            <b><u><span style="opacity: 0.5;" data-bs-toggle="tooltip" data-bs-html="true" data-bs-placement="bottom"
+                            title="보편적인 자막 형식에 맞춰 마침표나 느낌표 등의 문장 부호를 최소화하여 출력합니다.">?</span></b></u>
+                        </div>
+                        <div class="form-check form-switch me-3" style="color: #afafaf;" <?=($nplayer?'hidden':'')?>>
+                            <input class="form-check-input" type="checkbox" name="no_sub_bg" value="1" id="no_sub_bg" <?=($no_sub_bg=='1'?'checked':'')?> <?=($no_vttjs?'disabled':'')?>>
+                            <label class="form-check-label" for="no_sub_bg">반투명 배경 상자 숨기기</label>
+                        </div>
+                        <div class="form-check form-switch" style="color: #afafaf;" <?=($nplayer?'hidden':'')?>>
+                            <input class="form-check-input" type="checkbox" name="no_vttjs" value="1" id="no_vttjs" <?=($no_vttjs=='1'?'checked':'')?>>
+                            <label class="form-check-label" for="no_vttjs">레거시 자막 엔진 <span style="font-size: small; opacity: 0.5;">저사양 추천</span></label>
                         </div>
                         <input hidden name="video" value="<?=$_GET['video']?>">
+                        <?php if($direct) { ?><input hidden name="direct" value="1"><?php } ?>
                         <input hidden name="apply" value="1">
-                        <button type="submit" class="btn btn-sm btn-outline-light ms-2">적용</span></button>
+                        <div class="d-flex justify-content-end flex-grow-1 mt-2">
+                            <a class="btn btn-sm subview" href="../subview/?c=<?=urlencode($caption)?>" target="_blank">뷰어 (오류 제보)</a>
+                            <button type="submit" class="btn btn-sm btn-outline-light ms-1">적용</button>
+                        </div>
                     </form>
                 </div>
             </div>
-
             <?php
             }
             ?>
@@ -597,7 +278,7 @@ if (!$isitlast) { # 마지막 영상이 아닐 때에만
                         <div class="card-body">
                         <h6 class="card-subtitle mb-2 text-muted">비디오 정보</h6>
                             <div style="font-size:small; color: gray;">
-                            비디오 형식: <?=$path_parts['extension']?> <span id="vid_length"></span> </br>
+                            비디오 형식: <?=$path_parts['extension']?> <span id="vid_length"></span> <span id="vid_res"></span> </br>
                             비디오 용량: <span id='vid_size'><?=filesize($video)?></span>B (<?=round(filesize($video)/1024/1024,2)?>MB<span id="bitrate_info"></span>) </br>
                             마지막으로 수정된 날짜: <?=date("Y-m-d H:i:s", filemtime($video));?> </br>
                             마지막으로 열람된 날짜: <?=$last_chk?>
@@ -612,7 +293,7 @@ if (!$isitlast) { # 마지막 영상이 아닐 때에만
                 <!-- 자막 정보 -->
                 <div class="card mt-2">
                     <div class="card-body">
-                    <h6 class="card-subtitle mb-2 text-muted">내장 자막 정보</h6>
+                        <h6 class="card-subtitle mb-2 text-muted">내장 자막 정보</h6>
                         <div style="font-size:small; color: gray;">
                         자막 형식: <?=$captype?> | 언어: <?=$caplang?></br>
                         자막 용량: <?=filesize($startloc.$caption).'B ('.round(filesize($startloc.$caption)/1024,2).'KB)'?> </br>
@@ -626,21 +307,18 @@ if (!$isitlast) { # 마지막 영상이 아닐 때에만
             </div>
         </div>
 
-        <div class="fixed mt-3">
-            <p style="text-align: center;"><span style="color: #ffffff; opacity: 0.3;">by 1227<br>
+        <?php } ?>
+
+        <div class="fixed my-3">
+            <div style="text-align: center; color: #ffffff; opacity: 0.3;">
+                <div>by 1227</div>
+                <div class="mt-1" style="font-size: x-small;">rev. <?=$rev?> · 뷰 ID: <?=strtoupper($viewid)?></div>
+            </div>
         </div>
 
-        <!-- Optional JavaScript; choose one of the two! -->
-
-        <!-- Option 1: Bootstrap Bundle with Popper -->
+        <!-- Bootstrap Bundle with Popper -->
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" crossorigin="anonymous"></script>
-
-        <!-- Option 2: Separate Popper and Bootstrap JS -->
-        <!-- <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.min.js" integrity="sha384-QJHtvGhmr9XOIpI6YVutG+2QOK9T+ZnN4kzFN1RtK3zEFEIsxhlmWl5/YESvpZ13" crossorigin="anonymous"></script> -->
-
-        <script src="./js/script.js?rev=0.12"></script>
-
-
+        
         <style>
 
         <?php 
@@ -652,7 +330,7 @@ if (!$isitlast) { # 마지막 영상이 아닐 때에만
             .prev-bt::before {
                 border-radius: 5px;
                 content: "";
-                background: linear-gradient(to right, rgb(24, 24, 24) 60%, rgb(24, 24, 24, 0.7)), url("<?=$prev_thumb?>");
+                background: linear-gradient(to right, rgb(24, 24, 24) 60%, rgb(24, 24, 24, 0.7)), url("<?=urlenc_wos($prev_thumb)?>");
                 background-size: cover;
                 background-position: right;
                 background-repeat: no-repeat;
@@ -671,7 +349,7 @@ if (!$isitlast) { # 마지막 영상이 아닐 때에만
             .next-bt::before {
                 border-radius: 5px;
                 content: "";
-                background: linear-gradient(to right, rgb(24, 24, 24) 60%, rgb(24, 24, 24, 0.7)), url("<?=$next_thumb?>");
+                background: linear-gradient(to right, rgb(24, 24, 24) 60%, rgb(24, 24, 24, 0.7)), url("<?=urlenc_wos($next_thumb)?>");
                 background-position: right;
                 background-repeat: no-repeat;
                 background-size: cover, 50%;
@@ -681,8 +359,51 @@ if (!$isitlast) { # 마지막 영상이 아닐 때에만
             <?php
         }
         ?>
-
         </style>
 
+        <script src="./js/script.js?rev=<?=$rev?>"></script>
+        <script>
+
+        <?php if (!$nplayer) { ?>
+        // 1227 자막 권장값 설정
+        let player = videojs('stream_video');
+        player.ready(function(){
+            this.hotkeys({volumeStep: 0.1, seekStep: 5, enableModifiersForNumbers: false, enableHoverScroll: true});
+            var settings = this.textTrackSettings;
+            settings.setValues({
+                "fontFamily": "shSans",
+                "backgroundColor": "#000",
+                "backgroundOpacity": "<?=($no_sub_bg == '1' ? '0' : '0.5')?>", // 반투명 여부
+                "edgeStyle": "uniform",
+                "fontPercent": "1.25"
+            });
+            settings.updateDisplay();
+        });
+        player.landscapeFullscreen();
+        player.mobileUi();
+        <?php } ?>
+
+        // 영상 정보 처리
+        var vp = document.getElementById('stream_video_html5_api');
+        vp.addEventListener('loadedmetadata', function() {
+        const seconds = vp.duration;
+        const bitrate = document.getElementById('vid_size').textContent / 1024 / seconds * 8;
+        const vh = vp.videoHeight;
+
+        var hour = parseInt(seconds/3600) < 10 ? '0'+ parseInt(seconds/3600) : parseInt(seconds/3600);
+        var min = parseInt((seconds%3600)/60) < 10 ? '0'+ parseInt((seconds%3600)/60) : parseInt((seconds%3600)/60);
+        var sec = seconds % 60 < 10 ? '0'+seconds % 60 : seconds % 60;
+
+        if (hour > 0) {
+            document.getElementById('vid_length').textContent = '| 재생 길이: ' + hour + ':' + min + ":" + Math.round(sec*100)/100;
+        } else {
+            document.getElementById('vid_length').textContent = '| 재생 길이: ' + min + ":" + Math.round(sec*100)/100;
+        }
+
+        document.getElementById('bitrate_info').textContent = ', 평균 ' + Math.round(bitrate) + 'kbps';
+        document.getElementById('vid_res').textContent = '| 화질: ' + vh + 'p';
+        });
+
+        </script>
     </body>
 </html>

@@ -6010,10 +6010,10 @@
      */
   
     MediaError.defaultMessages = {
-      1: 'You aborted the media playback',
-      2: 'A network error caused the media download to fail part-way.',
-      3: 'The media playback was aborted due to a corruption problem or because the media used features your browser did not support.',
-      4: 'The media could not be loaded, either because the server or network failed or because the format is not supported.',
+      1: '영상 재생이 중단되었습니다',
+      2: '네트워크 통신 오류로 인해 미디어를 수신할 수 없습니다.',
+      3: '자격 증명이 만료되었거나 통신 오류로 인해 재생이 중단되었습니다. 새로 고침 후 다시 시도해 주세요.',
+      4: '자격 증명이 만료되었거나 미디어 파일 혹은 서버 오류로 인해 재생이 불가합니다. 새로 고침 후 다시 시도해 주세요.',
       5: 'The media is encrypted and we do not have the keys to decrypt it.'
     }; // Add types as properties on MediaError
     // e.g. MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED = 4;
@@ -11540,7 +11540,7 @@
   
   
           var script = document.createElement('script');
-          script.src = this.options_['vtt.js'] || 'https://vjs.zencdn.net/vttjs/0.14.1/vtt.min.js';
+          script.src = this.options_['vtt.js'] || 'https://vjs.zencdn.net/vttjs/0.15.3/vtt.min.js';
   
           script.onload = function () {
             /**
@@ -13644,6 +13644,7 @@
       ;
   
       _proto.updateDisplayState = function updateDisplayState(track) {
+
         var overrides = this.player_.textTrackSettings.getValues();
         var cues = track.activeCues;
         var i = cues.length;
@@ -13656,6 +13657,13 @@
           }
   
           var cueDiv = cue.displayState;
+          var fontSize = window.parseFloat(cueDiv.style.fontSize);
+          var blurSize;
+          if (overrides.fontPercent) {
+            blurSize = fontSize * overrides.fontPercent / 9; // (= n / 36 * 4)
+          } else {
+            blurSize = fontSize / 9;
+          }
   
           if (overrides.color) {
             cueDiv.firstChild.style.color = overrides.color;
@@ -13689,12 +13697,12 @@
             } else if (overrides.edgeStyle === 'depressed') {
               cueDiv.firstChild.style.textShadow = "1px 1px " + lightGray + ", 0 1px " + lightGray + ", -1px -1px " + darkGray + ", 0 -1px " + darkGray;
             } else if (overrides.edgeStyle === 'uniform') {
-              cueDiv.firstChild.style.textShadow = "0 0 4px " + darkGray + ", 0 0 4px " + darkGray + ", 0 0 4px " + darkGray + ", 0 0 4px " + darkGray;
+              cueDiv.firstChild.style.textShadow = "0 0 " + blurSize + "px black, 0 0 " + blurSize + "px black, 0 0 " + blurSize + "px black, 0 0 " + blurSize * 2 + "px black";
             }
           }
   
           if (overrides.fontPercent && overrides.fontPercent !== 1) {
-            var fontSize = window.parseFloat(cueDiv.style.fontSize);
+            // var fontSize = window.parseFloat(cueDiv.style.fontSize);
             cueDiv.style.fontSize = fontSize * overrides.fontPercent + 'px';
             cueDiv.style.height = 'auto';
             cueDiv.style.top = 'auto';

@@ -19,9 +19,18 @@ $startloc = '../'.$startloc;
 
 # 이건 사용자 편의상 설정 보존하려고 두는 변수들임
 $id = $_POST['id'];
-$sq = $_POST['sq'];
-$page = $_POST['page'];
-$url = './?id='.$id.'&sq='.$sq.'&page='.$page;
+
+# 탐색기를 통해 온 경우
+if ($_POST['viaexp'] == '1') {
+    $url = './?id='.$id.'&viaexp=1';
+
+# 비디오 목록에서 온 경우
+} else {
+    $sq = $_POST['sq'];
+    $page = $_POST['page'];
+    $order = $_POST['order'];
+    $url = './?id='.$id.'&sq='.$sq.'&page='.$page.'&order='.$order;
+}
 
 $id = mysqli_real_escape_string($conn, $_POST['id']);
 
@@ -50,7 +59,7 @@ if(file_exists($startloc.$fdir.'/.SUB/'.$fname_noext.'.vtt'))
     unlink($startloc.$fdir.'/.SUB/'.$fname_noext.'.vtt');
 }
 
-# vtt 자막이 있을때 -> 지우기
+# srt 자막이 있을때 -> 지우기
 if(file_exists($startloc.$fdir.'/.SUB/'.$fname_noext.'.srt')) 
 {
     chmod($startloc.$fdir.'/.SUB/'.$fname_noext.'.srt',0755); 

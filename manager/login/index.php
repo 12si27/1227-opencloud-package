@@ -11,6 +11,44 @@
 
     $fail = $_GET['fail'];
     $ourl = $_GET['ourl'];
+    $cilent_ip = $_SERVER['REMOTE_ADDR'];
+
+
+    # 안전 로그인 검증을 위해 다음 조건을 로그인 로그 DB를 통해 따지기:
+    # 1시간 이내 한 10번의 로그인 중 성공이 단 1번도 없음
+    # (즉 10번 연속으로 로그인 실패했단말)
+
+    require('../../src/dbconn.php');
+
+    # 이건 위 조건의 플래그 - false면 로그인 불가
+    $login_ok = true;
+
+    # 최근 10번 시도 불러오기
+    $query = mysqli_query($conn, "SELECT success, DATE_ADD(time, INTERVAL '1' HOUR) as t FROM `login_log` WHERE time >= DATE_SUB(NOW(), INTERVAL '1' HOUR) AND ip_address = '$cilent_ip' ORDER BY time LIMIT 10");
+    $succ_count = 0;
+    $fail_count = 0;
+
+    while ($row = mysqli_fetch_array($query)) {
+        if ($row['success'] == '1') {
+            $succ_count++;
+            break; # 한번만 있어도 되니까
+        } else {
+            $last_trial_1h_later = $row['t']; # 마지막 실패시도의 1시간 뒤 (로그인 가능 시간)
+            $fail_count++;
+        }
+    }
+    
+    # 최근 1시간, 10번 시도동안 성공을 한번도 못했을시
+    if ($succ_count == 0) {
+        # 열번째 시도 이상
+        if ($fail_count >= 10) {
+            $login_ok = false; # 로그인 차단
+        }
+    }
+
+    
+    
+
 ?>
 
 <!doctype html>
@@ -62,6 +100,14 @@
                 <div class="col-12 col-md-8 col-lg-6 col-xl-5">
                     <div class="card bg-dark text-white shadow" style="border-radius: 1rem;">
                         <div class="card-body p-5 text-center">
+
+                            <?php
+
+                            if (!$login_ok) {
+                                goto skipForm;
+                            }
+
+                            ?>
 
                             <form class="mb-md-5 mt-md-4 pb-5" method="POST" action="./login_check.php">
 
@@ -117,7 +163,22 @@
 
                             <div>
                                 <p class="mb-0 text-secondary">이 페이지는 운영자 전용 페이지입니다</p>
+                                <span class="mb-0 text-danger" style="font-size: small;">매 로그인 시도마다 시간과 IP가 영구적으로 기록됩니다</span>
                             </div>
+
+                            <?php
+skipForm:
+                            if (!$login_ok) {
+                                ?>
+                                <div class="mt-2 alert alert-danger flex align-items-center" role="alert">
+                                    <h3>로그인 일시 차단</h3>
+                                    <div>1시간 이내에 10번 이상 연속 실패하여</br>로그인이 일시적으로 차단되었습니다.</br>
+                                    <?=$last_trial_1h_later?> 후에 다시 시도하십시오.</div>
+                                </div>
+                                <?php
+                            }
+
+                            ?>
 
                         </div>
                     </div>

@@ -64,12 +64,8 @@ $last_chk = 'N/A';
 
 
 # 비디오 위치값 정리
-
 $orgv = $video;
 $video = $startloc.$video;
-$path_parts = pathinfo($video);
-$currdir = mb_substr($path_parts['dirname'],  mb_strlen($startloc, 'utf-8'), NULL, 'utf-8');
-
 
 # 비디오 정보 조회
 if (mysqli_num_rows($query) == 1) {

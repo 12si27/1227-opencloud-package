@@ -1,0 +1,54 @@
+@import url(//spoqa.github.io/spoqa-han-sans/css/SpoqaHanSansNeo.css);
+/*@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');*/
+@import url('https://rsms.me/inter/inter.css');
+
+:root
+{
+    --bs-font-sans-serif: 'Inter', 'Spoqa Han Sans Neo', Roboto, "Helvetica Neue", Arial, 'Noto Sans CJK', "Segoe UI", normal Arial, Helvetica, 'sans-serif';
+    color-scheme: dark;
+}
+
+body
+{
+    background-color: rgb(37, 37, 37);
+}
+
+.title
+{
+    color: rgb(218, 218, 218);
+}
+
+.navbar
+{
+    background-color: rgb(40, 40, 40) !important;
+}
+
+.main-control
+{
+    color: white;
+    background-color: rgb(31, 31, 31);
+}
+
+.sub-control
+{
+    color: white;
+    background-color: rgb(65, 65, 65);
+}
+
+.sub-box
+{
+    background-color: rgb(31, 31, 31);
+    border-radius: 5px;
+}
+
+.subcopy {
+    color: gray;
+    border-color: gray;
+    font-size: x-small;
+}
+
+.subcopy:hover {
+    background-color: white;
+    border-color: white;
+    color: black;
+}

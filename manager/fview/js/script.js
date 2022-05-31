@@ -1,5 +1,6 @@
 var startloc = document.getElementById("startloc").innerText;
 var loaddir = document.getElementById("loaddir").innerText;
+var currdir = loaddir;
 
 window.onpopstate = function(e) { 
     console.log(e.state.d);
@@ -10,7 +11,21 @@ document.getElementById("dirBt").onclick = function() {
     getDir(document.getElementById("currdirInput").value, false);
 }
 
+document.getElementById("newFolderBt").onclick = function() {
+    const folderName = document.getElementById("newFolderName").value.trim();
+
+    if (folderName != '') {
+        createDir(currdir, folderName);
+    }
+}
+
+document.getElementById("delFolderBt").onclick = function() {
+    removeDir(currdir);
+}
+
 function getDir(directory, backing) {
+
+    document.querySelector("#loader").hidden = false;
 
     var r = new XMLHttpRequest;
     r.open('POST', './scan.php');
@@ -23,9 +38,11 @@ function getDir(directory, backing) {
 
     r.onreadystatechange = function() {
         if (r.readyState === XMLHttpRequest.DONE && r.status === 200) {
+
             document.getElementById("dir").innerHTML = '';
             document.getElementById("currdir").innerText = directory;
             document.getElementById("currdirInput").value = directory;
+            currdir = directory;
 
             var valid = true;
 
@@ -117,6 +134,121 @@ function getDir(directory, backing) {
                 const fPanel = document.createElement("div");
                 fPanel.innerHTML = errmsg;
                 document.querySelector("#dir").append(fPanel); 
+            }
+
+            document.querySelector("#loader").hidden = true;
+        }
+    }
+}
+
+function createDir(directory, foldername) {
+
+    var r = new XMLHttpRequest;
+    r.open('POST', './file_make_dir.php');
+    r.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+    r.send('d=' + directory + "&f=" + foldername);
+
+
+    r.onreadystatechange = function() {
+        if (r.readyState === XMLHttpRequest.DONE && r.status === 200) {
+
+            var valid = true;
+
+            try {
+                var test = JSON.parse(r.responseText);
+            } catch {
+                valid = false;
+            }
+        
+            if (valid) {
+                const data = JSON.parse(r.responseText);
+                const result = data[0].result;
+        
+                if (result == 0) {
+                    document.querySelector("#newFolderName").value = "";
+                    document.querySelector("#error").innerHTML = "";
+                    getDir(directory, true);
+        
+                } else {
+                    var title = '';
+                    var cmt = '';
+                    if (result == -1) {
+                        title = '잘못된 경로';
+                        cmt = '올바른 경로로 이동 후 다시 시도하세요.';
+                    } else if (result == -2) {
+                        title = '폴더명을 입력하세요.';
+                    } else if (result == -3) {
+                        title = '이미 존재하는 폴더';
+                        cmt = '다른 이름으로 다시 시도하세요.';
+                    } else if (result == -4) {
+                        title = '슬래시 허용 안됨';
+                        cmt = '슬래시를 제외하여 다시 입력해 주세요.';
+                    } else if (result == -5) {
+                        title = '폴더 생성 실패';
+                        cmt = '잠시 후 다시 시도해 주세요.';
+                    } else {
+                        title = '알 수 없는 오류';
+                        cmt = '잠시 후 다시 시도해 주세요.';
+                    }
+                    const msg = `<div class="alert fade show p-2 rounded-3" style="color: white; background-color: #f14254;" role="alert">
+                                    <strong>${title}</strong> ${cmt}
+                                    <button type="button" class="btn-close btn-close-white align-middle" data-bs-dismiss="alert" aria-label="Close"></button>
+                                </div>`
+        
+                    document.querySelector("#error").innerHTML = msg;
+                }
+            }
+        }
+    }
+}
+
+function removeDir(directory) {
+
+    var r = new XMLHttpRequest;
+    r.open('POST', './file_rm_dir.php');
+    r.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+    r.send('d=' + directory);
+
+    r.onreadystatechange = function() {
+        if (r.readyState === XMLHttpRequest.DONE && r.status === 200) {
+
+            var valid = true;
+
+            try {
+                var test = JSON.parse(r.responseText);
+            } catch {
+                valid = false;
+            }
+        
+            if (valid) {
+                const data = JSON.parse(r.responseText);
+                const result = data[0].result;
+        
+                if (result == 0) {
+                    document.querySelector("#error").innerHTML = "";
+                    getDir(data[0].pdir, true);
+                    history.replaceState({'d': data[0].pdir}, '', './?d=' + encodeURIComponent(data[0].pdir));
+        
+                } else {
+                    var title = '';
+                    var cmt = '';
+                    if (result == -1) {
+                        title = '잘못된 경로';
+                        cmt = '올바른 경로로 이동 후 다시 시도하세요.';
+                    } else if (result == -2) {
+                        title = '삭제 실패';
+                        cmt = '폴더가 비어있지 않거나 권한이 없습니다.';
+                    } else {
+                        title = '알 수 없는 오류';
+                        cmt = '잠시 후 다시 시도해 주세요.';
+                    }
+                    const msg = `<div class="alert fade show p-2 rounded-3" style="color: white; background-color: #f14254;" role="alert">
+                                    <strong>${title}</strong> ${cmt}
+                                    <button type="button" class="btn-close btn-close-white align-middle" data-bs-dismiss="alert" aria-label="Close"></button>
+                                </div>`
+        
+                    document.querySelector("#error").innerHTML = msg;
+                }
             }
         }
     }

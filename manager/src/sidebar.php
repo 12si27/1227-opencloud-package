@@ -51,5 +51,10 @@ if ($curr_page == null) {
                 </a>
             </li>
 
+            <li class="sidebar-item <?=($curr_page=='upload'?'active':'')?>">
+                <a class="sidebar-link" href="<?=($curr_page=='index'?'':'.')?>./upload">
+                    <i class="align-middle" data-feather="upload-cloud"></i> <span class="align-middle">비디오 업로드</span>
+                </a>
+            </li>
     </div>
 </nav>
