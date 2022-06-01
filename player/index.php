@@ -151,7 +151,7 @@ require('./src/preload.php');
                         ?></a>
 
                         <button type="button" class="btn btn-sm btn-dark ms-2"
-                        onclick="copyClipboard('https://cloud.1227.kr/v/?id=<?=$vidid?>')"
+                        onclick="copyClipboard('[yoursite]/v/?id=<?=$vidid?>')"
                         data-bs-toggle="tooltip" data-bs-placement="bottom" title="이 영상으로 들어갈 수 있는 짧은 링크를 복사합니다.">
                         <i class="fas fa-link"></i> <span class="bt-text">링크</span></button>
 
