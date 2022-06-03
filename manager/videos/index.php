@@ -8,6 +8,10 @@ if(!isset($_SESSION['userid']))
 	exit();
 }
 
+function urlenc_wos($url) {
+	return str_replace('%2F','/',rawurlencode($url));
+}
+
 $user_id = $_SESSION['userid'];
 $user_name = $_SESSION['username'];
 
@@ -230,7 +234,7 @@ while($vid = mysqli_fetch_array($query)) {
 								 style="min-width: 350px; max-height: 113px;<?=($_GET['pid']==$vid_id[$i]?' background-color: #fcf4bf;':'')?>">
 								<div class="d-flex">
 									<div class="ratio ratio-16x9" style="width: 200px; min-width: 200px; height: 113px;">
-										<img src="<?=rawurlencode($thumblink)?>" class="rounded-start">
+										<img src="<?=urlenc_wos($thumblink)?>" class="rounded-start">
 									</div>
 									<div class="d-flex align-items-center mx-3">
 										<div class="d-flex flex-column">
