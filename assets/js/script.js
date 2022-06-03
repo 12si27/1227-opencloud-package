@@ -19,24 +19,17 @@ $(function() {
 		// capture back/forward navigation in the browser.
 
 		$(window).on('hashchange', function() {
-
 			goto(window.location.hash);
-
 			// We are triggering the event. This will execute 
 			// this function on page load, so that we show the correct folder:
-
 		}).trigger('hashchange');
 
 
 		// Hiding and showing the search box
-
 		filemanager.find('.search').click(function() {
-
 			var search = $(this);
-
 			search.find('span').hide();
 			search.find('input[type=search]').show().focus();
-
 		});
 
 
@@ -45,52 +38,34 @@ $(function() {
 		// in addition to keyboard input.
 
 		filemanager.find('input').on('input', function(e) {
-
 			folders = [];
 			files = [];
-
 			var value = this.value.trim();
 
 			if (value.length) {
-
 				filemanager.addClass('searching');
-
 				// Update the hash on every key stroke
 				window.location.hash = 'search=' + value.trim();
-
 			} else {
-
 				filemanager.removeClass('searching');
 				window.location.hash = encodeURIComponent(currentPath);
-
 			}
 
 		}).on('keyup', function(e) {
-
 			// Clicking 'ESC' button triggers focusout and cancels the search
-
 			var search = $(this);
-
 			if (e.keyCode == 27) {
-
 				search.trigger('focusout');
-
 			}
 
 		}).focusout(function(e) {
-
 			// Cancel the search
-
 			var search = $(this);
-
 			if (!search.val().trim().length) {
-
 				window.location.hash = encodeURIComponent(currentPath);
 				search.hide();
 				search.parent().find('span').show();
-
 			}
-
 		});
 
 
@@ -98,15 +73,10 @@ $(function() {
 
 		fileList.on('click', 'li.folders', function(e) {
 			e.preventDefault();
-
 			var nextDir = $(this).find('a.folders').attr('href');
-
 			if (filemanager.hasClass('searching')) {
-
 				// Building the breadcrumbs
-
 				breadcrumbsUrls = generateBreadcrumbs(nextDir);
-
 				filemanager.removeClass('searching');
 				filemanager.find('input[type=search]').val('').hide();
 				filemanager.find('span').show();
@@ -123,47 +93,34 @@ $(function() {
 
 		breadcrumbs.on('click', 'a', function(e) {
 			e.preventDefault();
-
 			var index = breadcrumbs.find('a').index($(this)),
 				nextDir = breadcrumbsUrls[index];
-
 			breadcrumbsUrls.length = Number(index);
-
 			window.location.hash = encodeURIComponent(nextDir);
-
 		});
 
 
 		// Navigates to the given hash (path)
 
 		function goto(hash) {
-
 			hash = decodeURIComponent(hash).slice(1).split('=');
-
 			if (hash.length) {
 				var rendered = '';
-
 				// if hash has search in it
-
 				if (hash[0] === 'search') {
-
 					filemanager.addClass('searching');
 					rendered = searchData(response, hash[1].toLowerCase());
-
 					if (rendered.length) {
 						currentPath = hash[0];
 						render(rendered);
 					} else {
 						render(rendered);
 					}
-
 				}
 
 				// if hash is some path
 				else if (hash[0].trim().length) {
-
 					rendered = searchByPath(hash[0]);
-
 					/*
 					if (rendered.length) {
 
@@ -177,14 +134,11 @@ $(function() {
 						breadcrumbsUrls = generateBreadcrumbs(hash[0]);
 						render(rendered);
 					}*/
-
 					currentPath = hash[0];
 					breadcrumbsUrls = generateBreadcrumbs(hash[0]);
 					fileList.fadeOut(200, function() {
 						render(rendered);
 					})
-
-
 				}
 
 				// if there is no hash
@@ -234,10 +188,9 @@ $(function() {
 		function searchData(data, searchTerms) {
 
 			data.forEach(function(d) {
+
 				if (d.type === 'folder') {
-
 					searchData(d.items, searchTerms);
-
 					if (d.name.toLowerCase().match(searchTerms)) {
 						folders.push(d);
 					}
@@ -292,14 +245,10 @@ $(function() {
 			}
 
 			if (scannedFolders.length) {
-
 				scannedFolders.forEach(function(f) {
-
 					var itemsLength = f.items.length,
 						name = escapeHTML(f.name),
-
 						icon = '<span class="icon folder"></span>';
-
 					if (itemsLength) {
 						icon = '<span class="icon folder full"></span>';
 					}
@@ -410,8 +359,6 @@ $(function() {
 			} else {
 
 				// fileList.addClass('animated');
-
-
 				breadcrumbsUrls.forEach(function(u, i) {
 
 					var name = u.split('/');
@@ -419,7 +366,6 @@ $(function() {
 					if (i !== breadcrumbsUrls.length - 1) {
 						url += '<a href="' + u + '"><span class="folderName">' + name[name.length - 1] + '</span></a> <span class="arrow">→</span> ';
 						document.getElementById("backButton").href = "#" + u;
-
 					} else {
 						url += '<span class="folderName">' + name[name.length - 1] + '</span>';
 					}
@@ -507,7 +453,6 @@ $(function() {
 
 
 		// Convert file sizes from bytes to human readable units
-
 		function bytesToSize(bytes) {
 			var sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
 			if (bytes == 0) return '0 Bytes';
