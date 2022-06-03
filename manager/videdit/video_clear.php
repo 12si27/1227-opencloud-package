@@ -54,10 +54,8 @@ if(mysqli_num_rows($query) > 0) {
         # 시간별 조회수 지우기
         $query = mysqli_query($conn, "DELETE FROM hourly_view WHERE id='$id'");
 
-        if (!$query) {
-            header('Location: '.$url.'&delok=-1');
-            exit;
-        }
+        # 키값 지우기
+        $query = mysqli_query($conn, "DELETE FROM locked WHERE id='$id'");
 
         # 비디오 DB 지우기
         $query = mysqli_query($conn, "DELETE FROM videos WHERE id='$id'");
