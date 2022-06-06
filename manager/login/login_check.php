@@ -12,7 +12,7 @@ if ($id==NULL || $pw==NULL) {
 }
 
 # 솔트값 지정 (긴 랜덤 문자열 권장)
-$salt = '1227cloudbmojennykeoyeowoo!';
+$salt = 'salt';
 $pw=hash('sha256', $salt.$pw);
 
 require('../../src/dbconn.php');
