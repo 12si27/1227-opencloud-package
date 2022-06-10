@@ -56,6 +56,12 @@ if ($rev == null) {
                 position: absolute;
                 z-index: -1;
             }
+
+            a {
+                font-weight: 800;
+                font-size: 20pt;
+                color: #5a5a5a;
+            }
         </style>
         <title>미등록 비디오</title>
     </head>
@@ -72,9 +78,14 @@ if ($rev == null) {
             <div class="content">
             <br>아직 서버에 완전히 등록되지 않았거나 현재 처리중인 비디오입니다.
             <br>문제라고 생각될 시 관리자에게 문의해 주시기 바랍니다.
+            <p><?php if ($direct) { ?>
+                    <a href="../#Home%2F<?=urlencode($currdir)?>">목록으로</a>
+                <?php } else { ?>
+                    <a href="javascript:void(0);" onclick="window.close();">나가기</a>
+                <?php } ?></p>
             </div>
             
-            <footer><img src="dbmo.png" width="300px"></footer>
+            <footer><img src="https://museum.1227.kr/2021/delreq/dbmo.png" width="300px"></footer>
         </div>
     </body>
 </html>

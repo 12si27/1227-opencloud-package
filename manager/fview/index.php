@@ -1,6 +1,8 @@
 <?php
 session_start();
 
+$rev = '0.25';
+
 # 로그인이 안돼있다면
 if(!isset($_SESSION['userid']))
 {
@@ -41,7 +43,7 @@ $from_upload = ($_GET['from_upload'] == 1);
 <head>
 	<!-- 헤더 -->
 	<?php require('../src/header.php')?>
-	<link href="./css/style.css?rev=0.1" rel="stylesheet">
+	<link href="./css/style.css?rev=<?=$rev?>" rel="stylesheet">
 </head>
 
 <body>
@@ -118,7 +120,7 @@ $from_upload = ($_GET['from_upload'] == 1);
 	</div>
 
 	<script src="../js/app.js"></script>
-    <script src="./js/script.js?rev=0.22"></script>
+    <script src="./js/script.js?rev=<?=$rev?>"></script>
 </body>
 
 </html>

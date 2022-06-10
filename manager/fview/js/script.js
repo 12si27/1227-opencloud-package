@@ -59,7 +59,7 @@ function getDir(directory, backing) {
                     const fPanel = document.createElement("div");
                     fPanel.className = "col";
 
-                    var path = data[idx].path.replace("'", '%27');
+                    var path = data[idx].path.replace(/'/g, "%27");
                     var name = data[idx].name;
                     var action = '';
                     var detail = '';
@@ -91,6 +91,10 @@ function getDir(directory, backing) {
                         thumb = './assets/image2.svg';
                         action = `location.href='${startloc+encodeURI(path)}';`;
                         detail = '이미지, ' + Math.round(data[idx].size/1024/1024*10)/10 + 'MB';
+                    } else if (data[idx].type == 'subtitle') {
+                        thumb = './assets/file.svg';
+                        action = `window.open('../../subview?c=${encodeURIComponent(path)}', '_blank');`;
+                        detail = '자막, ' + Math.round(data[idx].size/1024*10)/10 + 'KB';
                     } else {
                         thumb = './assets/file.svg';
                         action = `location.href='${startloc+encodeURI(path)}';`;

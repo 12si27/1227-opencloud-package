@@ -70,38 +70,47 @@ if (!$key_passed) {
             </div>
         </div>
     </div>
-    <?php
-
+<?php
 // 잠금 영상이 아니거나 키 패스한 경우
 } else {
 
+    // 만약 t= 파라미터 있으면 전달하기 위해 넣기
+    if ($_GET['t'] != null) {
+        if (is_numeric($_GET['t'])) {
+            $video_t = '#t='.$_GET['t'];
+        }
+    }
+
+    // 플레이어 컨테이너 출력
+    ?><div class="container ratio ratio-16x9 px-0" id="play_container" style="max-height: calc(100vh - 128px);"><?php
+
     // 1227 자체 플레이어
     if ($nplayer == false) { ?>
-        <div class="container px-0">
-            <video id="stream_video"
-                    class="video-js vjs-theme-1227 vjs-big-play-centered"
-                    width="100%" height="100%" controls controlsList="nodownload"
-                    <?php if($thumb != "") {echo 'poster="'.urlenc_wos($thumb).'"';}?>
-                    preload="true" data-setup='{ "aspectRatio":"16:9", "html5": {"nativeTextTracks": <?=($no_vttjs ? 'true' : 'false')?> } }'
-                    oncontextmenu="return false;" autoplay>
-                <source src="<?=$stream_url?>" type='video/mp4' />
-                <?php if ($caption != '') { captionTagPrint($path_parts['filename'], $caption, $no_punct, $caplang); } ?>
-            </video>
-            <script src="./js/video.min.js?rev=<?=$rev?>"></script>
-            <script src="./js/video.fullscreen.js"></script>
-            <script src="./js/video.mobileui.js?rev=1"></script>
-            <script src="./js/video.hotkeys.min.js"></script>
-        </div>
-    <?php }
-    
+    <video  id="stream_video"
+            style="position: absolute; overflow: hidden;"
+            class="video-js vjs-theme-1227 vjs-big-play-centered"
+            width="100%" height="100%" preload="true"
+            controls controlsList="nodownload"
+            <?php if($thumb != "") {echo 'poster="'.urlenc_wos($thumb).'"';}?>
+            data-setup='{ "html5": {"nativeTextTracks": <?=($no_vttjs ? 'true' : 'false')?> } }'
+            oncontextmenu="return false;" autoplay>
+        <source src="<?=$stream_url.$video_t?>" type='video/mp4' />
+    <?php if ($caption != '') { captionTagPrint($path_parts['filename'], $caption, $no_punct, $caplang); } ?>
+    </video>
+    <script src="./js/video.min.js?rev=<?=$rev?>"></script>
+    <script src="./js/video.fullscreen.js"></script>
+    <script src="./js/video.mobileui.js?rev=1"></script>
+    <script src="./js/video.hotkeys.min.js"></script>
+<?php
     // HTML5 브라우저 자체 플레이어
-    else { ?>
-        <div class="container ratio ratio-16x9 px-0">
-            <video id="stream_video_html5_api" width="100%" height="auto" autoplay controls
-            <?php if($thumb != "") {echo 'poster="'.urlenc_wos($thumb).'"';}?> oncontextmenu="return false;" controlsList="nodownload">
-                <source src="<?=$stream_url?>" type='video/mp4' />
-                <?php if ($caption != '') { captionTagPrint($path_parts['filename'], $caption, $no_punct, $caplang); } ?>
-            </video>
-        </div>
-    <?php }
+    } else { ?>
+        <video id="stream_video_html5_api" width="100%" height="auto" autoplay controls
+        <?php if($thumb != "") {echo 'poster="'.urlenc_wos($thumb).'"';}?> oncontextmenu="return false;" controlsList="nodownload">
+            <source src="<?=$stream_url.$video_t?>" type='video/mp4' />
+            <?php if ($caption != '') { captionTagPrint($path_parts['filename'], $caption, $no_punct, $caplang); } ?>
+        </video>
+<?php } ?>
+    </div>
+<?php
 }
+    

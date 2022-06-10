@@ -22,6 +22,11 @@ $urlchk = true;
 require('../src/settings.php');
 $video = $_GET['video'];
 
+
+# 크레딧 타임 (다음 비디오 뜨는 시점) -> 기본값: 30초
+$credit_time = 30;
+
+
 if ($video == null) {
     # video 파라미터 값 없으면 강 바로 상위페이지
     echo '<script>location.href="../"</script>';
@@ -257,11 +262,16 @@ function urlenc_wos($url) {
 }
 
 
+# 유저에이전트 모바일 검사
+function isMobileDevice() {
+    return preg_match("/(android|avantgo|blackberry|bolt|boost|cricket|docomo|fone|hiptop|mini|mobi|palm|phone|pie|tablet|up\.browser|up\.link|webos|wos)/i", $_SERVER["HTTP_USER_AGENT"]);
+}
+
 # 비디오ID 체크 및 등록
 
 require('../src/dbconn.php');
 $floc = mysqli_real_escape_string($conn, $video);
-$query = mysqli_query($conn, "SELECT id, views, last_checked FROM videos WHERE file_loc = '".$floc."'");
+$query = mysqli_query($conn, "SELECT id, views, last_checked, credit_time FROM videos WHERE file_loc = '".$floc."'");
 
 $views = 0;
 $last_chk = 'N/A';
@@ -325,6 +335,9 @@ if (mysqli_num_rows($query) < 1) {
     $last_chk = $query['last_checked'];
     $add = isCountable($vidid);
     $views = $query['views'] + $add;
+    if ($query['credit_time'] != null) {
+        $credit_time = $query['credit_time'];
+    }
     $sql = "UPDATE videos SET views = IFNULL(views, 0) + $add, last_checked = NOW() WHERE id = '$vidid'";
     mysqli_query($conn,$sql);
 }

@@ -5,8 +5,12 @@
 :root
 {
     --bs-font-sans-serif: 'Inter', 'Spoqa Han Sans Neo', Roboto, "Helvetica Neue", Arial, 'Noto Sans CJK', "Segoe UI", normal Arial, Helvetica, 'sans-serif';
+    font-family: 'Inter', 'Spoqa Han Sans Neo', Roboto, "Helvetica Neue", Arial, 'Noto Sans CJK', "Segoe UI", normal Arial, Helvetica, 'sans-serif';
     color-scheme: dark;
 }
+
+/* 웹킷 기반 스크린 색상 교정 CSS */
+@media screen and (-webkit-min-device-pixel-ratio:0) { video{ -webkit-filter: contrast(100%); } }
 
 body
 {
@@ -23,14 +27,20 @@ body
     background-color: rgb(40, 40, 40) !important;
 }
 
+#play_container {
+    transition: max-height .5s ease-out;
+}
+
 .main-control
 {
     color: white;
     background-color: rgb(31, 31, 31);
+    position: relative;
 }
 
 .bt-text
 {
+    font-size: small;
     white-space: nowrap;
 }
 
@@ -90,4 +100,77 @@ body
 
 .form-check-input:checked {
     background-color: #5aa1ef;
+}
+
+.nextVidBt {
+    width: 100%;
+    height: 100%;
+    text-align: left;
+    padding-left: 10%;
+    padding-right: 15%;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    border-top-left-radius: 5px;
+    border-bottom-left-radius: 5px;
+    opacity: 0.8;
+    cursor: pointer;
+    font-family: 'Inter', 'Spoqa Han Sans Neo', 'Noto Sans CJK', "Helvetica Neue", Roboto, Arial, "Segoe UI", normal Arial, Helvetica, 'sans-serif' !important;
+}
+
+#nextVidButton {
+    backdrop-filter: blur(7px);
+    position: absolute;
+    right: 0;
+    width: 270px;
+    height: 70px;
+    border-top-left-radius: 5px;
+    border-bottom-left-radius: 5px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+    transition: box-shadow .2s, width .2s;
+    animation: slidein 0.3s ease-in-out;
+}
+
+#nextVidButton:hover {
+    width: 280px;
+    box-shadow: 0 0 10px #5aa1ef;
+}
+
+@keyframes slidein {
+    from {
+        right: -270px;
+    }
+    to {
+        right: 0;
+    }
+  }
+
+.nextVidBt .wrapper {
+    width: 100%;
+}
+
+.nextVidBt .vidName {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 10pt;
+    padding-bottom: 5px;
+}
+
+.nextVidBt .label {
+    font-size: 13pt;
+    font-weight: 600;
+}
+
+.nextVidBt button {
+    height: 20px;
+    position: absolute;
+    top: 0; right: 0;
+    height: 100%;
+    width: 41px;
+    font-size: 20pt !important;
+}
+
+.nextVidBt button:hover {
+    font-size: 21pt !important;
 }

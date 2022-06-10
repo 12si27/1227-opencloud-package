@@ -4,14 +4,15 @@
     1227 CloudPlayer INDEX PAGE
 
     Written by 1227
-    rev. 20220529 (0.21.2)
+    rev. 20220610 (0.22.2)
 */
 
 # 리비전 -> 이거 없으면 실행 안됨 (index.php를 통해 실행했는지 체크여부도 겸함)
-$rev = '0.21.3';
-
+$rev = '0.22.2';
 require('./src/preload.php');
 
+# 출력 압축을 위해 버퍼 미리 시작
+ob_start();
 ?>
 <!doctype html>
 <html lang="en">
@@ -46,12 +47,13 @@ require('./src/preload.php');
         <link href="./css/theme.css?rev=<?=$rev?>" rel="stylesheet">
         <link href="https://cdn.jsdelivr.net/npm/videojs-mobile-ui/dist/videojs-mobile-ui.css" rel="stylesheet">
         <?php } ?>
-        
+
         <title><?=$path_parts['filename']?> - 1227 클라우드플레이어</title>
+        
     </head>
     <body>
-        
-        <nav class="navbar navbar-dark">
+        <style id="bodyStyle"></style>
+        <nav class="navbar navbar-dark" id="nav">
             <div class="container">
                 <a class="navbar-brand mb-0 ps-1 fw-bolder" href="../" style="color: rgb(150,150,150);">
                     12:<span style="color: #5aa1ef;">27</span> CloudPlayer
@@ -73,15 +75,14 @@ require('./src/preload.php');
 
         <?php
         // 제목 처리
-
         $title = $path_parts['filename'];
         # 대쉬가 있을 경우
-        if (mb_strpos($title, '-', 'utf-8') !== false) {
+        if (strpos($title, '-') !== false) {
             $series = trim(substr($title, 0, strpos($title, '-')));
             $name = trim(substr($title, strpos($title, '-') + 1));
 
             # 분류태그 ([]) 도 (짝이 맞게) 있을 경우
-            if (mb_strpos($title, '[', 'utf-8') !== false) {
+            if (strpos($title, '[') !== false) {
                 if (mb_substr_count($title, '[', 'utf-8') == mb_substr_count($title, ']', 'utf-8')) {
                     # 제목에서 태그 떼기
                     $name = trim(substr($name, 0, strpos($name, '[')));
@@ -89,11 +90,10 @@ require('./src/preload.php');
                     $tag = trim(substr($title, strpos($title, '[')));
                     $tag = str_replace('[', '<span class="badge bg-secondary" style="position:relative; bottom: 1.5pt;">', $tag);
                     $tag = str_replace(']', '</span>', $tag);
-
+                    $tag = str_replace('</span> ', '</span>&nbsp;', $tag);
                 }
             }
         }
-
         ?>
 
         <!-- 메인 컨트롤 -->
@@ -131,9 +131,15 @@ require('./src/preload.php');
 
                     <div class="p-2 flex-fill d-flex justify-content-end align-items-center">
                         <!-- 다음 버튼부터는 ms-2 넣기 -->
-                        <span type="button" class="btn btn-sm" style="background-color: #3f3f3f; color: #cdcdcd;" disabled
+                        <span class="btn btn-sm" style="background-color: #3f3f3f; color: #cdcdcd;" disabled
                         data-bs-toggle="tooltip" data-bs-placement="bottom" title="이 영상을 열람한 횟수">
-                        <i class="fa-solid fa-eye"></i> <span class="bt-text"><?=number_format($views)?></span></span>
+                        <i class="fa-solid fa-eye"></i><span class="bt-text"> <?=number_format($views)?></span></span>
+
+                        <!-- 아래는 영상이 재생 가능할때만 표시 -->
+                        <?php if ($key_passed) { ?>
+
+                        <button class="btn btn-sm btn-dark ms-2" onclick="switchPlayerSize();"
+                        title="창에 플레이어가 꽉 차도록 셋팅합니다." id="playSizeBt"><i class="fa-solid fa-expand"></i><span class="bt-text"> 꽉차게</span></button>
 
                         <a class="btn btn-sm btn-dark ms-2" href="?video=<?=urlencode($_GET['video'])?>&np=<?=($nplayer?0:1)?><?=($direct?'&direct=1':'')?>&r=1"
                         data-bs-toggle="tooltip" onclick="window.stop();" data-bs-html="true" data-bs-placement="bottom" title="<?php
@@ -144,23 +150,25 @@ require('./src/preload.php');
                             }
                             ?>"><?php
                             if ($nplayer) {
-                                echo '<i class="fa-solid fa-circle-play"></i> <span class="bt-text">자체</span>';
+                                echo '<i class="fa-solid fa-circle-play"></i><span class="bt-text"> 자체</span>';
                             } else {
-                                echo '<i class="fas fa-tv"></i> <span class="bt-text">기본</span>';
+                                echo '<i class="fas fa-tv"></i><span class="bt-text"> 기본</span>';
                             }
                         ?></a>
 
-                        <button type="button" class="btn btn-sm btn-dark ms-2"
-                        onclick="copyClipboard('[yoursite]/v/?id=<?=$vidid?>')"
+                        <button class="btn btn-sm btn-dark ms-2"
+                        onclick="copyClipboard('https://cloud.1227.kr/v/?id=<?=$vidid?>')"
                         data-bs-toggle="tooltip" data-bs-placement="bottom" title="이 영상으로 들어갈 수 있는 짧은 링크를 복사합니다.">
-                        <i class="fas fa-link"></i> <span class="bt-text">링크</span></button>
+                        <i class="fas fa-link"></i><span class="bt-text"> 링크</span></button>
 
-                        <a type="button" class="btn btn-sm btn-dark ms-2"
+                        <a class="btn btn-sm btn-dark ms-2"
                         href="<?=searchUrlGen($path_parts['filename'])?>"
                         target="_blank"
                         data-bs-toggle="tooltip" data-bs-html="true" data-bs-placement="bottom"
                         title="실시간 검색을 통해 해당 영상의 1227.kr 포스트로 접속합니다.">
-                        <img src="./naverblog.svg" width=18px height=18px></img> <span class="bt-text">포스트 검색</span></a>
+                        <img src="./naverblog.svg" width=18px height=18px></img><span class="bt-text"> 검색</span></a>
+
+                        <?php } ?>
                     </div>
                 </div>
             </div>
@@ -240,12 +248,12 @@ require('./src/preload.php');
             <div class="card mt-2">
                 <div class="card-body">
                 <h6 class="card-subtitle mb-2 text-muted">내장 자막 설정</h6>
-                    <form class="d-flex flex-wrap align-items-center" method="GET" onsubmit="window.stop();">
+                    <form id="subSetForm" class="d-flex flex-wrap align-items-center" method="GET" onsubmit="addVidTime(); window.stop();">
                         <div class="form-check form-switch me-3" style="color: #afafaf;">
                             <input class="form-check-input" type="checkbox" name="no_punct" value="1" id="no_punct" <?=($no_punct=='1'?'checked':'')?>>
                             <label class="form-check-label" for="no_punct">문장 부호 ( '.' , '~' , '!' 등) 최소화</label>
-                            <b><u><span style="opacity: 0.5;" data-bs-toggle="tooltip" data-bs-html="true" data-bs-placement="bottom"
-                            title="보편적인 자막 형식에 맞춰 마침표나 느낌표 등의 문장 부호를 최소화하여 출력합니다.">?</span></b></u>
+                            <span style="opacity: 0.5;" data-bs-toggle="tooltip" data-bs-html="true" data-bs-placement="bottom"
+                            title="보편적인 자막 형식에 맞춰 마침표나 느낌표 등의 문장 부호를 최소화하여 출력합니다.">&nbsp;<b><u>?</u></b></span>
                         </div>
                         <div class="form-check form-switch me-3" style="color: #afafaf;" <?=($nplayer?'hidden':'')?>>
                             <input class="form-check-input" type="checkbox" name="no_sub_bg" value="1" id="no_sub_bg" <?=($no_sub_bg=='1'?'checked':'')?> <?=($no_vttjs?'disabled':'')?>>
@@ -269,16 +277,14 @@ require('./src/preload.php');
             }
             ?>
 
-           
             <div class="row mt-3">
-
                 <!-- 비디오 정보 -->
                 <div class="col<?=($caption==''?'':'-sm-6')?>">
                     <div class="card mt-2">
                         <div class="card-body">
                         <h6 class="card-subtitle mb-2 text-muted">비디오 정보</h6>
                             <div style="font-size:small; color: gray;">
-                            비디오 형식: <?=$path_parts['extension']?> <span id="vid_length"></span> <span id="vid_res"></span> </br>
+                            비디오 형식: <?=$path_parts['extension']?><span id="vid_length"></span><span id="vid_res"></span></br>
                             비디오 용량: <span id='vid_size'><?=filesize($video)?></span>B (<?=round(filesize($video)/1024/1024,2)?>MB<span id="bitrate_info"></span>) </br>
                             마지막으로 수정된 날짜: <?=date("Y-m-d H:i:s", filemtime($video));?> </br>
                             마지막으로 열람된 날짜: <?=$last_chk?>
@@ -286,7 +292,6 @@ require('./src/preload.php');
                         </div>
                     </div>
                 </div>
-                
 
                 <?php if ($caption != '') { ?>
                 <div class="col-sm-6">
@@ -295,7 +300,7 @@ require('./src/preload.php');
                     <div class="card-body">
                         <h6 class="card-subtitle mb-2 text-muted">내장 자막 정보</h6>
                         <div style="font-size:small; color: gray;">
-                        자막 형식: <?=$captype?> | 언어: <?=$caplang?></br>
+                        자막 형식: <?=$captype?> · 언어: <?=$caplang?></br>
                         자막 용량: <?=filesize($startloc.$caption).'B ('.round(filesize($startloc.$caption)/1024,2).'KB)'?> </br>
                         마지막으로 수정된 날짜: <?=date("Y-m-d H:i:s", filemtime($startloc.$caption))?> </br>
                         문장 부호 숨김 여부: <?=($no_punct==1?'Y':'N')?>
@@ -320,13 +325,8 @@ require('./src/preload.php');
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" crossorigin="anonymous"></script>
         
         <style>
-
-        <?php 
-        if ($prev_thumb != '') {
-            ?>
-            .prev-bt {
-                text-shadow: rgb(24, 24, 24) 0px 0 5px;
-            }
+        <?php if ($prev_thumb != '') { ?>
+            .prev-bt { text-shadow: rgb(24, 24, 24) 0px 0 5px; }
             .prev-bt::before {
                 border-radius: 5px;
                 content: "";
@@ -341,11 +341,8 @@ require('./src/preload.php');
             <?php
         }
 
-        if ($next_thumb != '') {
-            ?>
-            .next-bt {
-                text-shadow: rgb(24, 24, 24) 0px 0 5px;
-            }
+        if ($next_thumb != '') { ?>
+            .next-bt { text-shadow: rgb(24, 24, 24) 0px 0 5px; }
             .next-bt::before {
                 border-radius: 5px;
                 content: "";
@@ -356,11 +353,13 @@ require('./src/preload.php');
                 position: absolute;
                 top: 0px; left: 0px; right: 0px; bottom: 0px;
             }
-            <?php
-        }
-        ?>
-        </style>
+        <?php } ?> 
 
+        .nextVidBt {
+            background: linear-gradient(to right, rgba(24, 24, 24, 0.5) 0, rgba(24, 24, 24, 1)), url("<?=urlenc_wos($next_thumb)?>");
+            background-position: right; background-repeat: no-repeat; background-size: cover;
+        }
+        </style>
         <script src="./js/script.js?rev=<?=$rev?>"></script>
         <script>
 
@@ -381,7 +380,45 @@ require('./src/preload.php');
         });
         player.landscapeFullscreen();
         player.mobileUi();
-        <?php } ?>
+
+        // Mobile - 볼륨컨트롤 숨기기
+        if (navigator.userAgent.match(/Android/i)||
+            navigator.userAgent.match(/iPhone/i)||
+            navigator.userAgent.match(/like Mac OS X/i)) {
+            document.getElementsByClassName("vjs-volume-panel")[0].hidden = true;
+        }
+        <?php
+        
+        if ($next_link != null) {
+
+            // 제목 처리
+            if ($smart_next_fname != '') {    
+                $next_title = substr($smart_next_fname, 0, strrpos($smart_next_fname, '.'));
+            } else {
+                $next_title = substr($files[$order+1], 0, strrpos($files[$order+1], '.'));
+            }
+
+            # 대쉬가 있을 경우
+            if (strpos($next_title, '-') !== false) {
+                $next_title = trim(substr($next_title, strpos($next_title, '-') + 1));
+            }
+
+            // 팝업패널 스타일링
+            ?>
+            videojs.registerComponent("nextVid", videojs.extend(videojs.getComponent("Component")));
+            var nbBtDom = player.addChild("nextVid", {}).el();
+            nbBtDom.style = '<?=(isMobileDevice()?'top: 5%;':'bottom: 7em;')?>';
+            nbBtDom.id = 'nextVidButton';
+            nbBtDom.hidden = true;
+            nbBtDom.innerHTML = `<div class='nextVidBt' onclick="nextVidBtClick()">
+            <div class='wrapper'>
+            <div class='vidName'><?=$next_title?></div>
+            <div class='label'>다음 비디오 보기</div></div>
+            <button onclick="nextVidBtClose()">×</button></div>`;
+
+            // 다음편보기 보여짐 여부
+            var nextBtShown = false; <?php 
+        } } ?>
 
         // 영상 정보 처리
         var vp = document.getElementById('stream_video_html5_api');
@@ -389,21 +426,40 @@ require('./src/preload.php');
         const seconds = vp.duration;
         const bitrate = document.getElementById('vid_size').textContent / 1024 / seconds * 8;
         const vh = vp.videoHeight;
-
         var hour = parseInt(seconds/3600) < 10 ? '0'+ parseInt(seconds/3600) : parseInt(seconds/3600);
         var min = parseInt((seconds%3600)/60) < 10 ? '0'+ parseInt((seconds%3600)/60) : parseInt((seconds%3600)/60);
         var sec = seconds % 60 < 10 ? '0'+seconds % 60 : seconds % 60;
-
         if (hour > 0) {
-            document.getElementById('vid_length').textContent = '| 재생 길이: ' + hour + ':' + min + ":" + Math.round(sec*100)/100;
+            document.getElementById('vid_length').textContent = ' · 재생 길이: ' + hour + ':' + min + ":" + Math.round(sec*100)/100;
         } else {
-            document.getElementById('vid_length').textContent = '| 재생 길이: ' + min + ":" + Math.round(sec*100)/100;
+            document.getElementById('vid_length').textContent = ' · 재생 길이: ' + min + ":" + Math.round(sec*100)/100;
         }
-
         document.getElementById('bitrate_info').textContent = ', 평균 ' + Math.round(bitrate) + 'kbps';
-        document.getElementById('vid_res').textContent = '| 화질: ' + vh + 'p';
+        document.getElementById('vid_res').textContent = ' · 화질: ' + vh + 'p';
         });
 
+        <?php if (!$nplayer && $next_link != null) { ?>
+        // 다음편 보기 팝업
+        vp.addEventListener('timeupdate', (event) => {
+            if (nextBtShown == false) {
+                // 크레딧타임 이내일시
+                if ((vp.duration - vp.currentTime) <= <?=$credit_time?>) {
+                    nextBtShown = true
+                    document.getElementById('nextVidButton').hidden = false;
+                }
+            }
+        });
+        function nextVidBtClick() {
+            document.querySelector('.nextVidBt button').hidden = true;
+            document.querySelector('.nextVidBt .vidName').hidden = true;
+            document.querySelector('.nextVidBt .label').innerHTML = '로드 중...';
+            window.stop(); location.href="<?=$next_link?>"; }
+        function nextVidBtClose() { event.stopPropagation(); document.getElementById('nextVidButton').hidden = true; }
+        <?php } ?>
         </script>
     </body>
 </html>
+<?php
+
+# 출력 압축 처리
+require_once('./src/optimizer.php');

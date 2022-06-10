@@ -192,23 +192,33 @@ if (mysqli_num_rows($query) > 0) {
 }
 
 # 다운로드 방지용
-if(isset($_SERVER["HTTP_REFERER"]) && $_SERVER['HTTP_SEC_FETCH_SITE'] == 'same-origin') {
-    $stream_ok = true;
-    
-} else {
-    if(!isset($_SESSION['userid'])) { # 운영자ID 없을때
-        http_response_code(403);
-        header("Content-Type: text/plain");
-        echo "Invaild Access";
-        exit;
-    } else {
+if(isset($_SERVER["HTTP_REFERER"])) { # 다이렉스 액세스시
+
+    # same-origin 값이 있을시
+    if ($_SERVER['HTTP_SEC_FETCH_SITE'] == 'same-origin') {
         $stream_ok = true;
+    } else {
+        # 없지만 사파리 브라우저 사용시
+        $user_agent = $_SERVER['HTTP_USER_AGENT'];
+        if (stripos( $user_agent, 'Chrome') === false && stripos( $user_agent, 'Safari') !== false)
+        {
+            $stream_ok = true;
+        }
     }
 }
+
+if(isset($_SESSION['userid'])) { # 운영자ID 있으면 통과
+    $stream_ok = true;
+}
+
 
 
 if ($stream_ok) {
     $stream = new VideoStream($startloc.$video);
     $stream->start();
+} else {
+    header("Content-Type: text/plain");
+    echo "Invaild Access";
+    exit;
 }
 

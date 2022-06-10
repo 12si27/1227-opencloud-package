@@ -47,11 +47,15 @@ if (!$dirchk) {
 $cfile = scandir($startloc.$curr_dir);
 $dir = $startloc.$curr_dir;
 
+
+$files = array();
+$folders = array();
+
 foreach($cfile as $f) {
 
     if($f == '.' || $f == '..') {
         if ($f == '..') {
-            $files[] = array(
+            $folders[] = array(
                 "name" => $f,
                 "type" => "parent",
                 "path" => substr($curr_dir, 0, strrpos($curr_dir, '/')),
@@ -65,7 +69,7 @@ foreach($cfile as $f) {
 
         // The path is a folder
 
-        $files[] = array(
+        $folders[] = array(
             "name" => $f,
             "type" => "folder",
             "path" => $curr_dir . '/' .  $f,
@@ -92,19 +96,26 @@ foreach($cfile as $f) {
                 "name" => $f,
                 "type" => "image",
                 "path" => $curr_dir . '/' . $f,
-                "size" => filesize($dir . '/' . $f) // Gets the size of this file
+                "size" => filesize($dir . '/' . $f)
+            );
+        } elseif ($ext == 'srt' || $ext == 'vtt' || $ext = 'smi') {
+            $files[] = array(
+                "name" => $f,
+                "type" => "subtitle",
+                "path" => $curr_dir . '/' . $f,
+                "size" => filesize($dir . '/' . $f)
             );
         } else {
             $files[] = array(
                 "name" => $f,
                 "type" => "file",
                 "path" => $curr_dir . '/' . $f,
-                "size" => filesize($dir . '/' . $f) // Gets the size of this file
+                "size" => filesize($dir . '/' . $f)
             );
         }
     }
 }
 
 header('Content-type: application/json');
-echo json_encode($files);
+echo json_encode(array_merge($folders, $files));
 

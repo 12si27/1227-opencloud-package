@@ -76,7 +76,7 @@ $is_empty = ($vidid == null);
 if (!$is_empty) {
 
 	$vidid = mysqli_real_escape_string($conn, $vidid);
-	$sql = "SELECT id, views, file_loc, last_checked FROM videos WHERE id = '$vidid'";
+	$sql = "SELECT id, views, file_loc, last_checked, credit_time FROM videos WHERE id = '$vidid'";
 
 	$query = mysqli_query($conn, $sql);
 
@@ -91,6 +91,7 @@ if (!$is_empty) {
 	$floc = $vid['file_loc'];
 	$lastchk = $vid['last_checked'];
 	$vidid = $vid['id'];
+	$credit_time = $vid['credit_time'];
 
 	$vid_name = substr($floc, strrpos($floc, '/')+1);
 	$vid_ext = substr($vid_name, strrpos($vid_name, '.')+1);
@@ -292,6 +293,34 @@ if (!$is_empty) {
                                     </div>
                                 </div>
                             </div>
+
+							<div class="card">
+								<div class="card-body">
+									<div class="d-flex justify-content-between">
+										<h3 class="card-title mb-2">크레딧 타임 (종료 시간) 설정</h3>
+										<button class="btn btn-sm btn-outline-secondary mb-2" onclick="setNowToCredTime();">
+											현재 미리보기 시점으로 설정
+										</button>
+									</div>
+									<form method="POST" action="./vid_cred_time_set.php">
+										<?=urlValuesPrint()?>
+										<div class="input-group mt-2">
+											<input type="text" placeholder="미지정 (기본값: 30초)" class="form-control" id="credit_time"
+											name="credit_time" value="<?=htmlentities($credit_time)?>" required>
+											<button class="btn btn-outline-secondary" type="submit">적용</button>
+										</div>
+									</form>
+								</div>
+                            </div>
+
+							<script>
+
+							function setNowToCredTime() {
+								const vp = document.getElementById('my_video');
+								const ct = document.getElementById('credit_time');
+								ct.value = Math.round(vp.duration - vp.currentTime);;
+							}
+							</script>
 
                             <div class="card">
                                 <div class="card-body">
