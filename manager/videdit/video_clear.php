@@ -6,11 +6,14 @@
 session_start();
 
 # 로그인이 안돼있다면
-if(!isset($_SESSION['userid']))
-{
-	header ('Location: ../login');
+if(!isset($_SESSION['userid'])) {
+	header ('Location: ../login?ourl='.urlencode($_SERVER[REQUEST_URI]));
 	exit();
 }
+
+# 세션 체크 - 관리자만 허용
+require_once('../src/session.php');
+sess_check(array('admin'));
 
 # DB, 설정 로드
 require('../../src/dbconn.php');

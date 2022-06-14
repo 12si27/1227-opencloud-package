@@ -4,18 +4,18 @@
     1227 CloudPlayer INDEX PAGE
 
     Written by 1227
-    rev. 20220610 (0.22.2)
+    rev. 20220612 (0.22.15)
 */
 
 # 리비전 -> 이거 없으면 실행 안됨 (index.php를 통해 실행했는지 체크여부도 겸함)
-$rev = '0.22.2';
+$rev = '0.22.15';
 require('./src/preload.php');
 
 # 출력 압축을 위해 버퍼 미리 시작
 ob_start();
 ?>
 <!doctype html>
-<html lang="en">
+<html lang="ko">
     <head>
         <!-- Required meta tags -->
         <meta charset="UTF-8">
@@ -28,15 +28,6 @@ ob_start();
         <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
         <link href="./css/style.css?rev=<?=$rev?>" rel="stylesheet">
         <script src="https://kit.fontawesome.com/b435844d6f.js" crossorigin="anonymous"></script>
-        
-        <!-- Global site tag (gtag.js) - Google Analytics -->
-        <script async src="https://www.googletagmanager.com/gtag/js?id=G-RGCW2QEFK9"></script>
-        <script>
-            window.dataLayer = window.dataLayer || [];
-            function gtag(){dataLayer.push(arguments);}
-            gtag('js', new Date());
-            gtag('config', 'G-RGCW2QEFK9');
-        </script>
 
         <!-- 자막 스타일 CSS 출력 (srt만) -->
         <?php require('./src/substyling.php') ?>
@@ -51,22 +42,28 @@ ob_start();
         <title><?=$path_parts['filename']?> - 1227 클라우드플레이어</title>
         
     </head>
-    <body>
+    <body <?php if (!$direct) { ?>onunload="opener.vidAccent(<?=$order+1?>);"<?php } ?>>
         <style id="bodyStyle"></style>
         <nav class="navbar navbar-dark" id="nav">
             <div class="container">
                 <a class="navbar-brand mb-0 ps-1 fw-bolder" href="../" style="color: rgb(150,150,150);">
-                    12:<span style="color: #5aa1ef;">27</span> CloudPlayer
+                    12:<span style="color: #5aa1ef;">27</span> CloudPlayer <?php
+                    if ($test_mode) { echo '<span style="font-size: x-small;">TEST MODE</span>'; } ?>
                 </a>
                 <div class="d-flex">
                 <?php if ($direct) { ?>
-                    <a class="btn btn-outline-light" href="../#Home%2F<?=urlencode($currdir)?>"><i class="fa-solid fa-grip"></i> 목록으로</a>
+                    <a class="btn btn-outline-light" onclick="window.stop();" href="../#Home%2F<?=urlencode($currdir)?>"><i class="fa-solid fa-grip"></i> 목록으로</a>
                 <?php } else { ?>
                     <a class="btn btn-outline-light" onclick="window.close();"><i class="fa-solid fa-door-open"></i> 나가기</a>
                 <?php } ?>
                 </div>
             </div>
         </nav>
+        <?php
+
+        # 크레딧 타임 존재할때 프리로드
+        if ($credit_time !== null) { ?> <input hidden id="credit-time" value="<?=$credit_time?>"> <?php }
+        ?>
 
         <!-- 플레이어 -->
         <div class="bg-black">
@@ -95,6 +92,8 @@ ob_start();
             }
         }
         ?>
+
+        
 
         <!-- 메인 컨트롤 -->
         <div class="main-control shadow-sm">
@@ -142,22 +141,13 @@ ob_start();
                         title="창에 플레이어가 꽉 차도록 셋팅합니다." id="playSizeBt"><i class="fa-solid fa-expand"></i><span class="bt-text"> 꽉차게</span></button>
 
                         <a class="btn btn-sm btn-dark ms-2" href="?video=<?=urlencode($_GET['video'])?>&np=<?=($nplayer?0:1)?><?=($direct?'&direct=1':'')?>&r=1"
-                        data-bs-toggle="tooltip" onclick="window.stop();" data-bs-html="true" data-bs-placement="bottom" title="<?php
-                            if ($nplayer) {
-                                echo '1227 백업클라우드에서 제공하는 자체 플레이어로 재생합니다.</br><sub>대부분의 환경에서 추천합니다.</sub>';
-                            } else {
-                                echo '브라우저에 내장된 플레이어로 재생합니다.</br><sub>iOS/레거시 환경에서 추천합니다.</sub>';
-                            }
-                            ?>"><?php
-                            if ($nplayer) {
-                                echo '<i class="fa-solid fa-circle-play"></i><span class="bt-text"> 자체</span>';
-                            } else {
-                                echo '<i class="fas fa-tv"></i><span class="bt-text"> 기본</span>';
-                            }
-                        ?></a>
+                           data-bs-toggle="tooltip" onclick="window.stop();" data-bs-html="true" data-bs-placement="bottom" title="<?php
+                            if ($nplayer) { echo '1227 백업클라우드에서 제공하는 자체 플레이어로 재생합니다.</br><sub>대부분의 환경에서 추천합니다.</sub>'; }
+                                     else { echo '브라우저에 내장된 플레이어로 재생합니다.</br><sub>iOS/레거시 환경에서 추천합니다.</sub>'; }
+                            ?>"><?php if ($nplayer) { echo '<i class="fa-solid fa-circle-play"></i><span class="bt-text"> 자체</span>'; }
+                                               else { echo '<i class="fas fa-tv"></i><span class="bt-text"> 기본</span>'; } ?></a>
 
-                        <button class="btn btn-sm btn-dark ms-2"
-                        onclick="copyClipboard('https://cloud.1227.kr/v/?id=<?=$vidid?>')"
+                        <button class="btn btn-sm btn-dark ms-2" onclick="copyClipboard('https://cloud.1227.kr/v/?id=<?=$vidid?>')"
                         data-bs-toggle="tooltip" data-bs-placement="bottom" title="이 영상으로 들어갈 수 있는 짧은 링크를 복사합니다.">
                         <i class="fas fa-link"></i><span class="bt-text"> 링크</span></button>
 
@@ -193,8 +183,8 @@ ob_start();
             <!-- 비디오 탐색 버튼 -->
             <div class="row">
                 <div class="col-md-6">
-                    <div class="shadow px-3 py-2 mb-2 switch-bt prev-bt">
-                        <?php if ($prev_link != NULL) { ?> <a class="switch-a" onclick="window.stop();" href="<?=$prev_link?>"> <?php } ?>
+                    <div class="shadow px-3 py-2 mb-2 switch-bt prev-bt" id="prev-bt" thumb="<?=urlenc_wos($prev_thumb)?>">
+                        <?php if ($prev_link != NULL) { ?> <a class="switch-a" id="prev-link" onclick="window.stop();" href="<?=$prev_link?>"> <?php } ?>
                             <div class="fw-bold switch-title">이전 비디오<?=($smart_prev_fname!=''?' <small><i>스마트 추천</i></small>':'')?></div>
                             <div class="text-wrap switch-content"><?php
                             if ($smart_prev_fname != '') {    
@@ -209,10 +199,10 @@ ob_start();
                     </div>
                 </div>
                 <div class="col-md-6">
-                    <div class="shadow px-3 py-2 mb-2 switch-bt next-bt">
-                        <?php if ($next_link != NULL) { ?> <a class="switch-a" onclick="window.stop();" href="<?=$next_link?>"> <?php } ?>
+                    <div class="shadow px-3 py-2 mb-2 switch-bt next-bt" id="next-bt" thumb="<?=urlenc_wos($next_thumb)?>">
+                        <?php if ($next_link != NULL) { ?> <a class="switch-a" id="next-link" onclick="window.stop();" href="<?=$next_link?>"> <?php } ?>
                             <div class="fw-bold switch-title">다음 비디오<?=($smart_next_fname!=''?' <small><i>스마트 추천</i></small>':'')?></div>
-                            <div class="text-wrap switch-content"><?php
+                            <div class="text-wrap switch-content" id="next-title"><?php
                             if ($smart_next_fname != '') {    
                                 echo substr($smart_next_fname, 0, strrpos($smart_next_fname, '.'));
                             } elseif ($isitlast) {
@@ -311,153 +301,89 @@ ob_start();
             <?php } ?>
             </div>
         </div>
-
         <?php } ?>
 
         <div class="fixed my-3">
             <div style="text-align: center; color: #ffffff; opacity: 0.3;">
-                <div>by 1227</div>
+                <div>by 1227 · <a href="javascript:void(0);" style="color: #ffffff;" data-bs-toggle="modal" data-bs-target="#keyModal">단축키</a></div>
                 <div class="mt-1" style="font-size: x-small;">rev. <?=$rev?> · 뷰 ID: <?=strtoupper($viewid)?></div>
+            </div>
+        </div>
+
+        <!-- 단축키 Modal -->
+        <div class="modal fade" id="keyModal" tabindex="-1" aria-labelledby="keyModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header pb-0">
+                        <h5 class="modal-title" id="keyModalLabel">플레이어 단축키</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th scope="col">키</th>
+                                <th scope="col">설명</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <th>스페이스 바 <sub>또는</sub> 클릭 *</th>
+                                <td>영상 재생/정지</td>
+                            </tr>
+                            <tr>
+                                <th>↑, ↓ 키 *</th>
+                                <td>볼륨 증가, 감소</td>
+                            </tr>
+                            <tr>
+                                <th>←, → 키 <sub>또는</sub> 좌/우 더블 탭 *</th>
+                                <td>10초 전/후 이동</td>
+                            </tr>
+                            <tr>
+                                <th>F <sub>또는</sub> 더블 클릭 *</th>
+                                <td>전체화면</td>
+                            </tr>
+                            <tr>
+                                <th>M *</th>
+                                <td>음소거</td>
+                            </tr>
+                            <tr>
+                                <th>T</th>
+                                <td>플레이어 확장/축소</td>
+                            </tr>
+                            <tr>
+                                <th><(,) / >(.) **</th>
+                                <td>이전/다음 비디오</td>
+                            </tr>
+                        </tbody>
+                        </table>                        
+                    </div>
+                    <div class="modal-footer pt-0 mt-0 d-flex justify-content-between">
+                        <div style="font-size: x-small">* 플레이어가 선택된 상태에서만 사용 가능합니다<br>** 재생 후 일정 시간이 지나야 사용 가능합니다</div>
+                        <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">확인</button>
+                    </div>
+                </div>
             </div>
         </div>
 
         <!-- Bootstrap Bundle with Popper -->
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" crossorigin="anonymous"></script>
-        
-        <style>
-        <?php if ($prev_thumb != '') { ?>
-            .prev-bt { text-shadow: rgb(24, 24, 24) 0px 0 5px; }
-            .prev-bt::before {
-                border-radius: 5px;
-                content: "";
-                background: linear-gradient(to right, rgb(24, 24, 24) 60%, rgb(24, 24, 24, 0.7)), url("<?=urlenc_wos($prev_thumb)?>");
-                background-size: cover;
-                background-position: right;
-                background-repeat: no-repeat;
-                background-size: cover, 50%;
-                position: absolute;
-                top: 0px; left: 0px; right: 0px; bottom: 0px;
-            }
-            <?php
-        }
-
-        if ($next_thumb != '') { ?>
-            .next-bt { text-shadow: rgb(24, 24, 24) 0px 0 5px; }
-            .next-bt::before {
-                border-radius: 5px;
-                content: "";
-                background: linear-gradient(to right, rgb(24, 24, 24) 60%, rgb(24, 24, 24, 0.7)), url("<?=urlenc_wos($next_thumb)?>");
-                background-position: right;
-                background-repeat: no-repeat;
-                background-size: cover, 50%;
-                position: absolute;
-                top: 0px; left: 0px; right: 0px; bottom: 0px;
-            }
-        <?php } ?> 
-
-        .nextVidBt {
-            background: linear-gradient(to right, rgba(24, 24, 24, 0.5) 0, rgba(24, 24, 24, 1)), url("<?=urlenc_wos($next_thumb)?>");
-            background-position: right; background-repeat: no-repeat; background-size: cover;
-        }
-        </style>
         <script src="./js/script.js?rev=<?=$rev?>"></script>
-        <script>
-
-        <?php if (!$nplayer) { ?>
-        // 1227 자막 권장값 설정
-        let player = videojs('stream_video');
-        player.ready(function(){
-            this.hotkeys({volumeStep: 0.1, seekStep: 5, enableModifiersForNumbers: false, enableHoverScroll: true});
-            var settings = this.textTrackSettings;
-            settings.setValues({
-                "fontFamily": "shSans",
-                "backgroundColor": "#000",
-                "backgroundOpacity": "<?=($no_sub_bg == '1' ? '0' : '0.5')?>", // 반투명 여부
-                "edgeStyle": "uniform",
-                "fontPercent": "1.25"
-            });
-            settings.updateDisplay();
-        });
-        player.landscapeFullscreen();
-        player.mobileUi();
-
-        // Mobile - 볼륨컨트롤 숨기기
-        if (navigator.userAgent.match(/Android/i)||
-            navigator.userAgent.match(/iPhone/i)||
-            navigator.userAgent.match(/like Mac OS X/i)) {
-            document.getElementsByClassName("vjs-volume-panel")[0].hidden = true;
-        }
-        <?php
-        
-        if ($next_link != null) {
-
-            // 제목 처리
-            if ($smart_next_fname != '') {    
-                $next_title = substr($smart_next_fname, 0, strrpos($smart_next_fname, '.'));
-            } else {
-                $next_title = substr($files[$order+1], 0, strrpos($files[$order+1], '.'));
-            }
-
-            # 대쉬가 있을 경우
-            if (strpos($next_title, '-') !== false) {
-                $next_title = trim(substr($next_title, strpos($next_title, '-') + 1));
-            }
-
-            // 팝업패널 스타일링
-            ?>
-            videojs.registerComponent("nextVid", videojs.extend(videojs.getComponent("Component")));
-            var nbBtDom = player.addChild("nextVid", {}).el();
-            nbBtDom.style = '<?=(isMobileDevice()?'top: 5%;':'bottom: 7em;')?>';
-            nbBtDom.id = 'nextVidButton';
-            nbBtDom.hidden = true;
-            nbBtDom.innerHTML = `<div class='nextVidBt' onclick="nextVidBtClick()">
-            <div class='wrapper'>
-            <div class='vidName'><?=$next_title?></div>
-            <div class='label'>다음 비디오 보기</div></div>
-            <button onclick="nextVidBtClose()">×</button></div>`;
-
-            // 다음편보기 보여짐 여부
-            var nextBtShown = false; <?php 
-        } } ?>
-
-        // 영상 정보 처리
-        var vp = document.getElementById('stream_video_html5_api');
-        vp.addEventListener('loadedmetadata', function() {
-        const seconds = vp.duration;
-        const bitrate = document.getElementById('vid_size').textContent / 1024 / seconds * 8;
-        const vh = vp.videoHeight;
-        var hour = parseInt(seconds/3600) < 10 ? '0'+ parseInt(seconds/3600) : parseInt(seconds/3600);
-        var min = parseInt((seconds%3600)/60) < 10 ? '0'+ parseInt((seconds%3600)/60) : parseInt((seconds%3600)/60);
-        var sec = seconds % 60 < 10 ? '0'+seconds % 60 : seconds % 60;
-        if (hour > 0) {
-            document.getElementById('vid_length').textContent = ' · 재생 길이: ' + hour + ':' + min + ":" + Math.round(sec*100)/100;
-        } else {
-            document.getElementById('vid_length').textContent = ' · 재생 길이: ' + min + ":" + Math.round(sec*100)/100;
-        }
-        document.getElementById('bitrate_info').textContent = ', 평균 ' + Math.round(bitrate) + 'kbps';
-        document.getElementById('vid_res').textContent = ' · 화질: ' + vh + 'p';
-        });
-
-        <?php if (!$nplayer && $next_link != null) { ?>
-        // 다음편 보기 팝업
-        vp.addEventListener('timeupdate', (event) => {
-            if (nextBtShown == false) {
-                // 크레딧타임 이내일시
-                if ((vp.duration - vp.currentTime) <= <?=$credit_time?>) {
-                    nextBtShown = true
-                    document.getElementById('nextVidButton').hidden = false;
-                }
-            }
-        });
-        function nextVidBtClick() {
-            document.querySelector('.nextVidBt button').hidden = true;
-            document.querySelector('.nextVidBt .vidName').hidden = true;
-            document.querySelector('.nextVidBt .label').innerHTML = '로드 중...';
-            window.stop(); location.href="<?=$next_link?>"; }
-        function nextVidBtClose() { event.stopPropagation(); document.getElementById('nextVidButton').hidden = true; }
-        <?php } ?>
-        </script>
     </body>
+    
+    <?php if(!$direct): # 다이렉트가 아닐 경우에만 ?>
+    <script> 
+        <?php # 현재 비디오의 로케이션 - 만약 startloc에 ../이 두개이상일경우 따로 설정!!
+        $curr_hash = str_replace('../', '', $startloc.$currdir); ?>
+        opener.currVid = <?=$order+1?>;
+
+        // 탐색기 디렉토리 자동설정 -> 매칭 안할때
+        if (opener.location.hash != "#<?=urlencode($curr_hash)?>") {
+            opener.location.hash = "#<?=urlencode($curr_hash)?>";
+        } else { opener.vidAccent(<?=$order+1?>); }
+    </script>
+    <?php endif ?>
+    
 </html>
 <?php
 

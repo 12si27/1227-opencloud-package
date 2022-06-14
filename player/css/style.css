@@ -60,9 +60,9 @@ body
 
 .switch-bt
 {
+    text-shadow: rgb(24, 24, 24) 0px 0 5px;
     background-color: rgb(24, 24, 24);
     border-radius: 5px;
-    /* cursor: pointer; */
     transition: transform .2s;
     position: relative; 
 }
@@ -102,7 +102,7 @@ body
     background-color: #5aa1ef;
 }
 
-.nextVidBt {
+.nextPopBt {
     width: 100%;
     height: 100%;
     text-align: left;
@@ -118,7 +118,7 @@ body
     font-family: 'Inter', 'Spoqa Han Sans Neo', 'Noto Sans CJK', "Helvetica Neue", Roboto, Arial, "Segoe UI", normal Arial, Helvetica, 'sans-serif' !important;
 }
 
-#nextVidButton {
+#nextPopButton {
     backdrop-filter: blur(7px);
     position: absolute;
     right: 0;
@@ -131,7 +131,7 @@ body
     animation: slidein 0.3s ease-in-out;
 }
 
-#nextVidButton:hover {
+#nextPopButton:hover {
     width: 280px;
     box-shadow: 0 0 10px #5aa1ef;
 }
@@ -145,11 +145,11 @@ body
     }
   }
 
-.nextVidBt .wrapper {
+.nextPopBt .wrapper {
     width: 100%;
 }
 
-.nextVidBt .vidName {
+.nextPopBt .vidName {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -157,12 +157,12 @@ body
     padding-bottom: 5px;
 }
 
-.nextVidBt .label {
+.nextPopBt .label {
     font-size: 13pt;
     font-weight: 600;
 }
 
-.nextVidBt button {
+.nextPopBt button {
     height: 20px;
     position: absolute;
     top: 0; right: 0;
@@ -171,6 +171,26 @@ body
     font-size: 20pt !important;
 }
 
-.nextVidBt button:hover {
+.nextPopBt button:hover {
     font-size: 21pt !important;
+}
+
+/* 단축키 설명 모달 */
+.modal-content {
+    background-color: rgba(30,30,30, 0.7);
+    backdrop-filter: blur(5px);
+    color: #c1c1c1;
+}
+
+.modal-header, .modal-body, .modal-footer {
+    border: none;
+}
+
+.modal-body table {
+    color: #c1c1c1;
+}
+
+.modal-body tbody th,
+.modal-body tbody td {
+    border-bottom: 1px solid #7f7f7f;
 }

@@ -12,7 +12,7 @@ if ($id==NULL || $pw==NULL) {
 }
 
 # 솔트값 지정 (긴 랜덤 문자열 권장)
-$salt = 'salt';
+$salt = '';
 $pw=hash('sha256', $salt.$pw);
 
 require('../../src/dbconn.php');
@@ -57,8 +57,11 @@ if(mysqli_num_rows($query) == 1) {
     $row = mysqli_fetch_array($query);
 
     if ($row['pw']==$pw) {
+
+        // 로그인 후 세션에 정보저장
         $_SESSION['userid']=$id;
         $_SESSION['username']=$row['name'];
+        $_SESSION['type']=$row['type'];
 
         $query = mysqli_query($conn, "UPDATE admin SET last_login = NOW() WHERE id = '$id'");
 

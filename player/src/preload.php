@@ -5,7 +5,7 @@
     (반드시 index.php 내에서 실행되어야 함)
 
     Written by 1227
-    rev. 20220528
+    rev. 20220612
 */
 if ($rev == null) {
     echo 'invalid access';
@@ -65,7 +65,7 @@ if ($video == '') {
     }  
 
     # *.mp4 컨테이너만 허용 (추후 webm 사용시 변경 필요)
-    if (!endsWith($video, '.mp4')) {
+    if (!checkVidExt($video)) {
         $urlchk = false;
     }   
 
@@ -176,8 +176,6 @@ if ($no_vttjs == null) { # get no_pucnt 값 없을때
 } else { setcookie('no_vttjs', $no_vttjs, time()+3600*24*365, '/'); }
 
 
-
-
 # 문자열 접미사 (파일 확장자) 판단
 function endsWith($string, $endString)
 {
@@ -187,6 +185,14 @@ function endsWith($string, $endString)
     }
     return (mb_substr($string, -$len, NULL, 'utf-8') === $endString);
 }
+
+# 비디오 확장자 판단
+function checkVidExt($filename)
+{
+    $f = strtolower($filename);
+    return (endsWith($f, '.mp4') || endsWith($f, '.webm'));
+}
+
 
 # 자막 이름 지정
 function captionTagPrint($filename, $caption, $no_punct, $caplang) {
@@ -261,12 +267,6 @@ function urlenc_wos($url) {
 	return str_replace('%2F','/',rawurlencode($url));
 }
 
-
-# 유저에이전트 모바일 검사
-function isMobileDevice() {
-    return preg_match("/(android|avantgo|blackberry|bolt|boost|cricket|docomo|fone|hiptop|mini|mobi|palm|phone|pie|tablet|up\.browser|up\.link|webos|wos)/i", $_SERVER["HTTP_USER_AGENT"]);
-}
-
 # 비디오ID 체크 및 등록
 
 require('../src/dbconn.php');
@@ -287,6 +287,11 @@ $currdir = mb_substr($path_parts['dirname'],  mb_strlen($startloc, 'utf-8'), NUL
 
 ################################ 비디오 정보 등록 ################################
 
+// 만약 '/테스트용/' 디렉토리일경우
+// 정보등록 생략
+$test_mode = (strpos($currdir, '테스트용') === 0);
+
+
 $newvid = false;
 
 # 비디오가 등록되어 있지 않은 경우
@@ -295,35 +300,6 @@ if (mysqli_num_rows($query) < 1) {
     # 새로 생성하기는 관리 페이지 (/manager) 에서 하도록 함
     # (비디오 추가하고 잠금 설정 하기 전에 열람해버리면 곤란하니까)
     # 그냥 오류창 띄우고 치우게하기
-
-    /*
-    
-    while(1) {
-
-        # id생성
-        $chars = "abcdefghijklmnopqrstuvwxyz0123456789";
-        $var_size = strlen($chars);
-        $vidid = '';
-        for( $x = 0; $x < 6; $x++ ) { 
-            $vidid .= $chars[ rand( 0, $var_size - 1 ) ]; 
-        }
-
-        # 중복체크
-        $id_check = mysqli_query($conn, "SELECT id FROM videos WHERE id = '$vidid'");
-        if (mysqli_num_rows($id_check) < 1) {
-            break;
-        }
-    }
-
-    $sql = "INSERT INTO `videos` (`file_loc`, `id`, `views`) VALUES ('$floc', '$vidid', '1')";
-    $result = mysqli_query($conn,$sql);
-    $views = 1;
-
-    # 새로 막 생성된 비디오 -> 기존 비디오가 아니므로 새비디오로 플래그 생성
-    # > 이는 비공개 비디오 확인 절차를 생략하기 위함
-    $newvid = true;
-
-    */
 
     require_once('./src/novdb.php');
     exit;
@@ -338,10 +314,12 @@ if (mysqli_num_rows($query) < 1) {
     if ($query['credit_time'] != null) {
         $credit_time = $query['credit_time'];
     }
-    $sql = "UPDATE videos SET views = IFNULL(views, 0) + $add, last_checked = NOW() WHERE id = '$vidid'";
-    mysqli_query($conn,$sql);
-}
 
+    if (!$test_mode): # 테스트 모드일땐 조회수반영 X
+        $sql = "UPDATE videos SET views = IFNULL(views, 0) + $add, last_checked = NOW() WHERE id = '$vidid'";
+        mysqli_query($conn,$sql);
+    endif;
+}
 
 
 ####################################### 비공개 비디오 확인 #######################################
@@ -397,7 +375,7 @@ if (!$newvid) {
 
 ################################################################################################
 
-
+if (!$test_mode):
 
 ################################ 비디오 시간당 조회수 등록 ################################
 
@@ -419,7 +397,7 @@ if (mysqli_num_rows($query) < 1) {
 
 ################################################################################################
 
-
+endif;
 
 ######################################## 내장 자막 분석 ########################################
 
@@ -452,7 +430,7 @@ $isitfirst = false;
 $isitlast = false;
 
 $files = array_values(array_filter(scandir($path_parts['dirname']), function($item) {
-    return endsWith($item, '.mp4');
+    return checkVidExt($item);
 }));
 
 
@@ -517,7 +495,7 @@ if ($isitlast OR $isitfirst) { # 시즌 첫화 또는 막화일시 (폴더의 �
 
             # 맨 끝에놈을 찾아야 하니 break 없음
             foreach ($subdirlist as $file) {
-                if (endsWith($file, '.mp4')) {
+                if (checkVidExt($file)) {
                     $smart_prev_fname = $file;
                 }
             }
@@ -528,7 +506,7 @@ if ($isitlast OR $isitfirst) { # 시즌 첫화 또는 막화일시 (폴더의 �
             $subdirlist = scandir($currsubdir.$smart_next);
 
             foreach ($subdirlist as $file) {
-                if (endsWith($file, '.mp4')) {
+                if (checkVidExt($file)) {
                     $smart_next_fname = $file;
                     break;
                 }
@@ -557,7 +535,6 @@ if (!$isitfirst) { # 첫번째 영상이 아닐 시에만
     $prev_thumb = $currsubdir.$smart_prev.'/.THUMB/'.substr($smart_prev_fname, 0, strrpos($smart_prev_fname, '.')).'.jpg';   
 }
 
-
 # 다음 영상 썸네일
 $next_thumb = '';
 if (!$isitlast) { # 마지막 영상이 아닐 때에만
@@ -565,6 +542,9 @@ if (!$isitlast) { # 마지막 영상이 아닐 때에만
 } elseif ($smart_next_fname != '') { # 추천 이전 영상 존재시에도
     $next_thumb = $currsubdir.$smart_next.'/.THUMB/'.substr($smart_next_fname, 0, strrpos($smart_next_fname, '.')).'.jpg';   
 }
+
+if (!file_exists($prev_thumb)) { $prev_thumb = ''; }
+if (!file_exists($next_thumb)) { $next_thumb = ''; }
 
 ################################################################################################
 

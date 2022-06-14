@@ -9,12 +9,16 @@
 session_start();
 
 # 로그인이 안돼있다면
-if(!isset($_SESSION['userid']))
-{
+if(!isset($_SESSION['userid'])) {
 	header("Content-Type: text/plain");
     echo "Invaild Session";
     exit;
 }
+
+# 세션 체크 - 관리자 및 모더 허용
+require_once('../src/session.php');
+sess_check(array('admin', 'mod'));
+
  
 class VideoStream
 {

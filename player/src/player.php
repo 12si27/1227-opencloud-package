@@ -28,7 +28,7 @@ if (!$key_passed) {
         
 
         #locked_vid {
-            background-image: url('<?=urlenc_wos($thumb)?>');
+            background-image: url('<?=($thumb != "" ? urlenc_wos($thumb):'./res/default_thumb.png')?>');
             background-size: cover;
             background-repeat: no-repeat;
             
@@ -45,7 +45,7 @@ if (!$key_passed) {
                     <h2 class="fw-bold text-light mb-2"><i class="fa-solid fa-lock"></i> 잠긴 영상</h2>
                     <p class="text-white-50 mb-3">비디오 열람을 위해 암호(키)가 필요합니다.</p>
                     <div class="form-floating mb-2">
-                        <input type="" autocomplete="off" name="key" class="form-control" id="floatingInput" placeholder="key" required>
+                        <input type="" autocomplete="off" name="key" class="form-control" id="floatingInput" placeholder="key" tabindex="0" autofocus="autofocus" onfocus="this.select()" required>
                         <label for="floatingInput">여기에 입력해 주세요</label>
                     </div>
                     <input hidden name="tried" value="1">
@@ -91,7 +91,7 @@ if (!$key_passed) {
             class="video-js vjs-theme-1227 vjs-big-play-centered"
             width="100%" height="100%" preload="true"
             controls controlsList="nodownload"
-            <?php if($thumb != "") {echo 'poster="'.urlenc_wos($thumb).'"';}?>
+            poster="<?=($thumb != "" ? urlenc_wos($thumb):'./res/default_thumb.png')?>"
             data-setup='{ "html5": {"nativeTextTracks": <?=($no_vttjs ? 'true' : 'false')?> } }'
             oncontextmenu="return false;" autoplay>
         <source src="<?=$stream_url.$video_t?>" type='video/mp4' />
@@ -105,7 +105,8 @@ if (!$key_passed) {
     // HTML5 브라우저 자체 플레이어
     } else { ?>
         <video id="stream_video_html5_api" width="100%" height="auto" autoplay controls
-        <?php if($thumb != "") {echo 'poster="'.urlenc_wos($thumb).'"';}?> oncontextmenu="return false;" controlsList="nodownload">
+               poster="<?=($thumb != "" ? urlenc_wos($thumb):'./res/default_thumb.png')?>"
+               oncontextmenu="return false;" controlsList="nodownload">
             <source src="<?=$stream_url.$video_t?>" type='video/mp4' />
             <?php if ($caption != '') { captionTagPrint($path_parts['filename'], $caption, $no_punct, $caplang); } ?>
         </video>

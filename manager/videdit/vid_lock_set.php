@@ -6,11 +6,14 @@
 session_start();
 
 # 로그인이 안돼있다면
-if(!isset($_SESSION['userid']))
-{
-	header ('Location: ../login');
+if(!isset($_SESSION['userid'])) {
+	header ('Location: ../login?ourl='.urlencode($_SERVER[REQUEST_URI]));
 	exit();
 }
+
+# 세션 체크 - 관리자 및 모더 허용
+require_once('../src/session.php');
+sess_check(array('admin', 'mod'));
 
 # DB, 설정 로드
 require('../../src/dbconn.php');
@@ -62,16 +65,6 @@ if(mysqli_num_rows($query) == 1) {
     # 이미 있을 경우
     if (mysqli_num_rows($query) > 0) {
         $sql = "UPDATE `locked` SET `vid_key` = '$pass_key', `active` = '$active' WHERE `locked`.`id` = '$id'";
-
-        # 만약 활성화일때 -> 업데이트
-        if ($active == '1') {
-            $sql = "INSERT INTO `locked` (`id`, `active`, `vid_key`, `allowed_user`) VALUES ('$id', '$active', '$pass_key', NULL)";
-        
-        # 만약 비활성화일때 -> 제거
-        } else {
-            $sql = "DELETE FROM `locked` WHERE `locked`.`id` = '$id'";
-            
-        }
 
     # 없을 경우
     } else {

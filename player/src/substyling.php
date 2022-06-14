@@ -29,9 +29,11 @@ function midReturn($string, $start, $end) {
 
 echo "<style>\n";
 
-
 # 사용된 컬러 종류 담는 배열
 $colors = array();
+
+# sub태그 사용여부
+$has_sub = false;
 
 # 내용 스캔
 $fh = fopen($startloc.$caption, 'r');
@@ -62,19 +64,23 @@ while ($line = fgets($fh)) {
                     array_push($colors, $color);
                     
                     # CSS 출력 시작
-?>
-video::cue(c.c<?=str_replace('#','',$color)?>), .vjs-text-track-cue span.c<?=str_replace('#','',$color)?> { color: <?=$color?>; }
-<?php
+                    ?>video::cue(c.c<?=str_replace('#','',$color)?>), .vjs-text-track-cue span.c<?=str_replace('#','',$color)?> { color: <?=$color?>; } <?php
 
                 }
             }
         }
+    # sub태그 있을 경우
+    } elseif (strpos($line, '<sub>') !== false) {
+        $has_sub = true;
     }
 }
     
 fclose($fh);
 
-echo "</style>\n";
+# sub css 추가
+if ($has_sub) { ?>video::cue(c.sub), .vjs-text-track-cue span.sub { font-size: 75%; line-height: 75%; background-color: transparent; }<?php }
+
+echo "\n</style>";
 
 
 styling_pass:

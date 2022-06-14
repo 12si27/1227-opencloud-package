@@ -4,16 +4,16 @@
     1227 OpenCloud Explorer INDEX PAGE
 
     Written by 1227
-    rev. 20220522 (1.16.8)
+    rev. 20220613 (1.16.22)
 */
 
 	define('PROJECT_ROOT', getcwd());
-	$rev = '1.16.8';
+	$rev = '1.16.22';
 ?> 
 
 <!DOCTYPE html>
 <html> 
-	<head lang="en">
+	<head lang="ko">
 		<meta charset="UTF-8">
 		<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 		<meta name="mobile-web-app-capable" content="yes">
@@ -32,15 +32,6 @@
 		<!-- Font Awesome -->
 		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.css" />
 
-		<!-- Global site tag (gtag.js) - Google Analytics -->
-		<script async src="https://www.googletagmanager.com/gtag/js?id=G-RGCW2QEFK9"></script>
-		<script>
-			window.dataLayer = window.dataLayer || [];
-			function gtag(){dataLayer.push(arguments);}
-			gtag('js', new Date());
-
-			gtag('config', 'G-RGCW2QEFK9');
-		</script>
 
 	</head> 
 	<body>
@@ -59,19 +50,17 @@
 			</div>
 			<div class="nothingfound">
 				<div class="nofiles"></div>
-				<span>아무것도 없어요.<br></span>
+				<span>아무것도 없어요.<br><font color="gray" size="2"><center>문제라고 생각되면<br>메일(feedback@1227.kr)로 알려주세요</center></font></span>
 			</div>
 
 			<br>
 			<div class="fixed" style="margin-top: 20px;">
 				<div style="text-align: center;">
-					<span style="color: #ffffff; opacity: 0.6;">by 1227<br>
+					<span style="color: #ffffff; opacity: 0.6;">by 1227</span><br>
 					<div style="opacity: 0.15; margin-top: 12px; font-size: small;">rev. <?=$rev?></div>
 				</div><br><br>
 			</div>
 				
 	<script src="assets/js/script.js?ver=<?=$rev?>"></script>
-
 	</body>
 </html>
-

@@ -685,3 +685,8 @@ footer #tzine-actions iframe{
 	vertical-align: middle;
 	line-height: normal;
 }
+
+/* 재생중 강조 */
+.playing {
+	box-shadow: 0 0 20px #4294ff;
+}

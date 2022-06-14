@@ -1,12 +1,15 @@
 <?php
 session_start();
 
-# 로그인이 안돼어있다면
-if(!isset($_SESSION['userid']))
-{
+# 로그인이 안돼있다면
+if(!isset($_SESSION['userid'])) {
 	header ('Location: ../login?ourl='.urlencode($_SERVER[REQUEST_URI]));
 	exit();
 }
+
+# 세션 체크 - 관리자 및 모더 허용
+require_once('../src/session.php');
+sess_check(array('admin', 'mod'));
 
 $urlchk = true;
 
@@ -102,20 +105,15 @@ if (mysqli_num_rows($query) == 1) {
         header('Location: ../videdit?id='.$vidid."&viaexp=1");
 
     } else {
-        echo
-"<!DOCTYPE html>
-<html>
-<head>
-	<meta charset=\"utf-8\">
-	<meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\">
-	<meta name=\"viewport\" content=\"width=device-width, initial-scale=1, shrink-to-fit=no\">
-</head>
-<body>
-    <h3>등록되지 않은 비디오입니다!</h3>
-    <p><a href='./file_vid_finder.php?f=$orgv&assign=1'>이 링크</a>를 눌러 비디오를 DB에 등록하세요. </p>
-    <p>등록을 원치 않는 경우, <a href='javascript:history.back()'>여기</a>를 눌러 뒤로 돌아갑니다.</p>
-</body>
-</html>";
+        ?>
+<script>
+    if (confirm('미등록 비디오입니다!\n지금 바로 DB에 등록하시겠습니까?\n\n\'취소\'를 누르면 돌아갑니다.')) {
+        location.href='./file_vid_finder.php?f=<?=$orgv?>&assign=1';
+    } else {
+        history.back();
+    }
+</script>
+        <?php
     }
 
     

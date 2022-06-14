@@ -149,10 +149,14 @@ foreach (explode("\n", $sub_data) as $line) {
         # srt일 경우 -> font color 태그 c.cXXX로 수정하기!!
         if($issrt) {
 
+            # <sub> </sub> 처리
+            $line = str_replace('<sub>', '<c.sub>', $line);
+            $line = str_replace('</sub>', '</c>', $line);
+
             if (strpos($line, '<font color') !== false) {
 
                 # 우선 </font> 부터 처리
-                $line = str_replace('</font>', '</c>', $line);
+                $line = str_replace('</font>', '</c>', $line);                
 
                 # 샵 있는것들
 

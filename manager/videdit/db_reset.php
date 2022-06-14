@@ -6,11 +6,14 @@
 session_start();
 
 # 로그인이 안돼있다면
-if(!isset($_SESSION['userid']))
-{
-	header ('Location: ../login');
+if(!isset($_SESSION['userid'])) {
+	header ('Location: ../login?ourl='.urlencode($_SERVER[REQUEST_URI]));
 	exit();
 }
+
+# 세션 체크 - 관리자만 허용
+require_once('../src/session.php');
+sess_check(array('admin'));
 
 # DB, 설정 로드
 require('../../src/dbconn.php');
@@ -41,6 +44,11 @@ if(mysqli_num_rows($query) > 0) {
 
     $row = mysqli_fetch_array($query);
 
+    # 나중에 탐색기 이동을 위한 디렉토리 확보
+    $currdir = $startloc.$row['file_loc'];
+    $currdir = substr($currdir, 0, strrpos($currdir, '/'));
+    $currdir = substr_replace($currdir, '', 0, strlen($startloc));
+
     # 시간별 조회수 지우기
     $query = mysqli_query($conn, "DELETE FROM hourly_view WHERE id='$id'");
 
@@ -48,6 +56,9 @@ if(mysqli_num_rows($query) > 0) {
         header('Location: '.$url.'&delok=-1');
         exit;
     }
+
+    # 키설정 지우기
+    $query = mysqli_query($conn, "DELETE FROM locked WHERE `locked`.`id` = '$id'");
 
     # 비디오 DB 지우기
     $query = mysqli_query($conn, "DELETE FROM videos WHERE id='$id'");
@@ -68,7 +79,7 @@ if(mysqli_num_rows($query) > 0) {
 }
 
 # 성공했으므로 뒤로 복구
-header('Location: '.$url.'&delok=1');
+header('Location: ../fview?d='.$currdir.'&delok=1');
 exit;
 
 ?>

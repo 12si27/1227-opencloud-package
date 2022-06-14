@@ -1,12 +1,15 @@
 <?php
 session_start();
 
-# 로그인이 안돼어있다면
-if(!isset($_SESSION['userid']))
-{
-    echo ("not a valid request");
+# 로그인이 안돼있다면
+if(!isset($_SESSION['userid'])) {
+	header ('Location: ../login?ourl='.urlencode($_SERVER[REQUEST_URI]));
 	exit();
 }
+
+# 세션 체크 - 관리자 및 모더 허용
+require_once('../src/session.php');
+sess_check(array('admin', 'mod'));
 
 require('../../src/settings.php');
 
@@ -82,23 +85,23 @@ foreach($cfile as $f) {
         // It is a file
         $ext = substr($f, strrpos($f, '.')+1);
 
-        # 확장자가 만약 mp4라면
+        # 확장자가 만약 비디오라면
 
-        if ($ext == 'mp4') {
+        if ($ext == 'mp4' || $ext == 'webm') {
             $files[] = array(
                 "name" => $f,
                 "type" => "video",
                 "path" => $curr_dir . '/' . $f,
                 "size" => filesize($dir . '/' . $f) // Gets the size of this file
             );
-        } elseif ($ext == 'jpg') {
+        } elseif ($ext == 'jpg' || $ext == 'png') {
             $files[] = array(
                 "name" => $f,
                 "type" => "image",
                 "path" => $curr_dir . '/' . $f,
                 "size" => filesize($dir . '/' . $f)
             );
-        } elseif ($ext == 'srt' || $ext == 'vtt' || $ext = 'smi') {
+        } elseif ($ext == 'srt' || $ext == 'vtt' || $ext == 'smi') {
             $files[] = array(
                 "name" => $f,
                 "type" => "subtitle",

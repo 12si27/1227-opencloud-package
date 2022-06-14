@@ -4,6 +4,7 @@ $(function() {
 		breadcrumbs = $('.breadcrumbs'),
 		fileList = filemanager.find('.data');
 
+	
 	// Start by fetching the file data from scan.php with an AJAX request
 
 	$.get('scan.php', function(data) {
@@ -294,11 +295,11 @@ $(function() {
 						icon = '<div style="display:inline-block;margin:20px 30px 0px 25px;border-radius:8px;width:60px;height:60px;background-position: center center;background-size: cover; background-repeat:no-repeat;background-image: url(\'' + f.path + '\');"></div>';
 					} else if (fileType == "gif") {
 						icon = '<div style="display:inline-block;margin:20px 30px 0px 25px;border-radius:8px;width:60px;height:60px;background-position: center center;background-size: cover; background-repeat:no-repeat;background-image: url(\'' + f.path + '\');"></div>';
-					} else if (fileType == "mp4") {
+					} else if (fileType == "mp4" || fileType == "webm") {
 						count += 1;
 
 						const floc = '/' + f.path.substring(0, f.path.lastIndexOf('/')) + '/';
-						const fname = f.path.substring(f.path.lastIndexOf('/') + 1, f.path.length - 4);
+						const fname = f.path.substring(f.path.lastIndexOf('/') + 1, f.path.length - fileType.length - 1);
 						const thumb = '.' + floc + '.THUMB/' + fname + '.jpg';
 						icon = '<span class="icon file f-' + fileType + '" id="video-' + count + '">.' + fileType + '</span>';
 
@@ -325,10 +326,10 @@ $(function() {
 						file.appendTo(fileList);
 					} else if (fileType == "pdf") {
 						var file = $('<li class="files"><a data-fancybox data-type="iframe" data-src="' + f.path + '" title="' + f.path + '" href="javascript:;" class="files">' + icon + '<span class="name">' + name + '</span> <span class="details">' + fileSize + '</span></a></li>');
-					} else if (fileType == "mp4") {
+					} else if (fileType == "mp4" || fileType == "webm") {
 						var newdir = "./player?video=" + encodeURIComponent(f.path.substring(f.path.indexOf('/') + 1));
-						name = name.substring(name.indexOf('-') + 1, name.indexOf('.mp4')).trim();
-						var file = $('<li class="files"><a href="' + newdir + '" target="_blank" title="' + f.path + '" class="files">' + icon + '<span class="name">' + name + '</span> <span class="details">' + fileSize + '</span></a></li>');
+						name = name.substring(name.indexOf('-') + 1, name.indexOf('.'+fileType)).trim();
+						var file = $('<li class="files" id="v-' + count + '"><a href="' + newdir + '" target="_blank" rel="opener" title="' + f.path + '" class="files">' + icon + '<span class="name">' + name + '</span> <span class="details">' + fileSize + '</span></a></li>');
 					} else if (fileType == "srt" || fileType == "vtt" || fileType == "smi") {
 						var newdir = "./subview?c=" + encodeURIComponent(f.path.substring(f.path.indexOf('/') + 1));
 						var file = $('<li class="files"><a href="' + newdir + '" target="_blank" title="' + f.path + '" class="files">' + icon + '<span class="name">' + name + '</span> <span class="details">' + fileSize + '</span></a></li>');
@@ -416,7 +417,8 @@ $(function() {
 				}
 			});
 
-
+			// 재생비디오 강조표시
+			if (currVid != -1) { vidAccent(currVid); }
 
 		}
 
@@ -459,5 +461,28 @@ $(function() {
 			var i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)));
 			return Math.round(bytes / Math.pow(1024, i), 2) + ' ' + sizes[i];
 		}
+
+
+
+		
 	});
 });
+
+var currVid = -1;
+
+function vidAccent(order) {
+	if (order != -1) {
+		var videos = document.getElementsByClassName('playing');
+
+		for (vid of videos) {
+			vid.classList.remove('playing');
+		}
+
+		if (document.getElementById('v-'+order) != null) {
+			document.getElementById('v-'+order).classList.add('playing');
+			setTimeout(function () {document.getElementById('v-'+order).scrollIntoView({behavior: "smooth", block: "center"});}, 500);
+		}
+
+		currVid = -1; // 강조표시 했으면 바로 초기화
+	}
+}

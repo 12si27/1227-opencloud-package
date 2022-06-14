@@ -6,8 +6,7 @@ try:
 
     headers = { 'User-Agent': 'Mozilla/5.0 (Linux; Android 8.0; Pixel 2 Build/OPD3.170816.012) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4606.81 Mobile Safari/537.36' }
 
-    blogid = ''
-    url = 'https://blog.naver.com/PostSearchList.naver?blogId='+blogid+'&categoryNo=0&range=all&SearchText=' + parse.quote(sys.argv[1])
+    url = 'https://blog.naver.com/PostSearchList.naver?blogId=12si27&categoryNo=0&range=all&SearchText=' + parse.quote(sys.argv[1])
     r = requests.get(url, headers = headers).text
     bs = BeautifulSoup(r, 'lxml')
 

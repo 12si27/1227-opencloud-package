@@ -2,11 +2,14 @@
 session_start();
 
 # 로그인이 안돼있다면
-if(!isset($_SESSION['userid']))
-{
+if(!isset($_SESSION['userid'])) {
 	header ('Location: ../login?ourl='.urlencode($_SERVER[REQUEST_URI]));
 	exit();
 }
+
+# 세션 체크 - 관리자 및 모더 허용
+require_once('../src/session.php');
+sess_check(array('admin', 'mod'));
 
 function captionTagPrint($caption) {
     echo '<track kind="subtitles" label="Caption" src="../../player/subscan.php?c='.urlencode($caption).'" srclang="ko" default="">';
@@ -423,13 +426,18 @@ if (!$is_empty) {
                                 <form class="card-body" method="POST" action="./vid_lock_set.php">
                                     <h3 class="card-title mb-3">비디오 잠금 설정</h3>
 									<?=urlValuesPrint()?>
-									<div class="form-check me-3">
-										<input class="form-check-input" onchange="vidLockChkChange();" type="checkbox" name="pass_key_active" value="1" id="pass_key_active" <?=($pass_key_active=='1'?'checked':'')?>>
-										<label class="form-check-label" for="pass_key_active">비디오 잠금 활성화</label>
-									</div>
+									<div class="d-flex justify-content-between align-items-center">
+										<div class="form-check me-3">
+											<input class="form-check-input" onchange="vidLockChkChange();" type="checkbox" name="pass_key_active" value="1" id="pass_key_active" <?=($pass_key_active=='1'?'checked':'')?>>
+											<label class="form-check-label" for="pass_key_active">비디오 잠금 활성화</label>
+										</div>
+										<div class="btn btn-sm btn-outline-secondary" onclick="makeKey();">
+											랜덤 키 생성
+										</div>
+									</div>									
                                     <div class="input-group mt-2">
                                         <input type="text" placeholder="여기에 키 값 입력" class="form-control" id="pass_key"
-										name="pass_key" value="<?=htmlentities($pass_key)?>" required <?=($pass_key_active=='1'?'':'disabled')?>>
+										name="pass_key" value="<?=htmlentities($pass_key)?>" required <?=($pass_key_active=='1'?'':'readonly')?>>
 										<button class="btn btn-outline-secondary" type="submit" id="uploadBt">적용</button>
 									</div>
 								</form>
@@ -440,12 +448,12 @@ if (!$is_empty) {
                                     <h3 class="card-title mb-3">비디오 · DB 삭제</h3>
 
 									<div class="d-flex justify-content-end">
-										<button class="btn btn-outline-danger ms-2" type="button" id="delVidBt" onclick="deleteVideo(true);">비디오 파일 삭제</button>									
-										<form action="./db_reset.php" method="POST">
+										<button class="btn btn-outline-danger ms-2" type="button" id="delVidBt" onclick="deleteVideoConfirm(true);">비디오 파일 삭제</button>									
+										<form action="./db_reset.php" method="POST" onsubmit="return confirm('정말 비디오 DB를 삭제하시겠습니까?');">
 											<?=urlValuesPrint()?>
 											<button class="btn btn-outline-danger ms-2" type="submit" id="delDBBt">DB 데이터 삭제</button>
 										</form>
-										<button class="btn btn-danger ms-2" type="button" id="delAllBT" onclick="deleteVideo(false);">전체 삭제</button>
+										<button class="btn btn-danger ms-2" type="button" id="delAllBT" onclick="deleteVideoConfirm(false);">전체 삭제</button>
 									</div>
                                 </div>
                             </div>
@@ -477,6 +485,7 @@ if (!$is_empty) {
 			<!-- footer 영역 -->
 			<?php require('../src/footer.php')?>
 		</div>
+		
 	</div>
 
 	<script src="../js/app.js"></script>
@@ -484,10 +493,37 @@ if (!$is_empty) {
 	<script>
 		function vidLockChkChange() {
 			if (document.getElementById('pass_key_active').checked) {
-				document.getElementById('pass_key').disabled = false;
+				document.getElementById('pass_key').readOnly = false;
 			} else {
-				document.getElementById('pass_key').disabled = true;
+				document.getElementById('pass_key').readOnly = true;
 			}
+		}
+
+		function deleteVideoConfirm(type) {
+			var msg = '';
+			if (type) {
+				msg = '정말 비디오를 삭제하시겠습니까?';
+			} else {
+				msg = '정말 전체삭제를 진행하시겠습니까?';
+			}
+
+			if (confirm(msg)) {
+				deleteVideo(type);
+			} 
+		}
+
+		function makeKey() {
+			const length = 64;
+			const input = document.getElementById('pass_key');
+
+			var result           = '';
+			var characters       = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+			var charactersLength = characters.length;
+			for ( var i = 0; i < length; i++ ) {
+				result += characters.charAt(Math.floor(Math.random() * charactersLength));
+			}
+			
+			input.value = result;
 		}
 	</script>
 </body>
